@@ -1,0 +1,21 @@
+{
+  "name": "vidhyatra_backend",
+  "version": "1.0.0",
+  "description": "final year project",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "bhumika k.c.",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.11.3",
+    "sequelize": "^6.37.4"
+  }
+}
