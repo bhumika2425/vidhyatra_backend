@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profile');
-const path = require('path'); // Add this line
+const path = require('path'); 
 const upload = require('./config/multerConfig'); // Multer configuration imported here
 require('dotenv').config();
 
