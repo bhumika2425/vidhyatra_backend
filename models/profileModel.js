@@ -15,13 +15,17 @@ const Profile = sequelizeVidhyatra.define('Profile', {
             key: 'user_id',
         },
     },
-    nickname: {
+    full_name: {
         type: DataTypes.STRING(50),
     },
     date_of_birth: {
         type: DataTypes.DATE,
     },
     location: {
+        type: DataTypes.STRING(100),
+    },
+
+    department: {
         type: DataTypes.STRING(100),
     },
     year: {
