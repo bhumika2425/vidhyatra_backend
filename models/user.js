@@ -30,6 +30,14 @@ const User = sequelizeVidhyatra.define('User', {
         type: DataTypes.ENUM('Student', 'Teacher'),
         defaultValue: 'Student',
     },
+    otp: {
+        type: DataTypes.STRING, // Store the OTP
+        allowNull: true,
+    },
+    otpExpiry: {
+        type: DataTypes.DATE, // Store OTP expiry time
+        allowNull: true,
+    },
     created_at: {
         type: DataTypes.DATE, // Changed from TIMESTAMP to DATE
         defaultValue: DataTypes.NOW,

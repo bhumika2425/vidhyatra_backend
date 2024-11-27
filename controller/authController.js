@@ -4,6 +4,8 @@ const UserService = require('../services/userService');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken'); // Import JWT for token generation
 const bcrypt = require('bcrypt'); // Assuming you're using bcrypt for password hashing
+const nodemailer = require('nodemailer');
+const crypto = require('crypto'); // To generate a secure OTP
 
 
 const registerStudent = async (req, res) => {
@@ -39,5 +41,103 @@ const loginUser = async (req, res) => {
     }
 };
 
+// Step 1: Generate OTP and send to email
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    console.log('Email in forgotPassword:', email); 
 
-module.exports = { registerStudent, loginUser };
+    try {
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ message: 'Email not registered' });
+        }
+
+        // Generate a random OTP (6 digits)
+        const otp = crypto.randomInt(100000, 999999).toString();
+
+        // Save OTP to the user model or cache for validation
+        user.otp = otp;
+        user.otpExpiry = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+        await user.save();
+
+        // Send OTP via email using Nodemailer
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset OTP',
+            text: `Your OTP for password reset is: ${otp}`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({ message: 'OTP sent to your email' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+// Step 2: Verify OTP (New route)
+const verifyOtp = async (req, res) => {
+    console.log('Request body in verifyOtp:', req.body); // Log request body
+    const { email, otp } = req.body;
+    console.log('Email in verifyOtp:', email, 'OTP:', otp); // Log email and otp
+
+    try {
+        const user = await User.findOne({ where: { email } });
+
+        if (!user || user.otp !== otp || user.otpExpiry < Date.now()) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        // OTP is valid; Clear OTP fields but inform the client that verification was successful
+        user.otp = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        res.status(200).json({ message: 'OTP verified successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Step 3: Reset Password (Only after OTP verification)
+const resetPassword = async (req, res) => {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    try {
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            console.log('Password mismatch error');
+            return res.status(400).json({ message: 'Passwords do not match' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: 'Password reset successful' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword };
