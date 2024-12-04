@@ -118,7 +118,22 @@ const chatFileUpload = multer({
   fileFilter: chatFileFilter  // Apply chat file filter
 });
 
+const blogImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/blog-images');  // Store in 'uploads/blog-images'
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const blogImageUpload = multer({
+  storage: blogImageStorage, // Reusing profile storage or create a new one
+  limits: { fileSize: fileSizeLimit },
+}).array('images', 5); // Allow up to 5 images4
+
 module.exports = {
   profileImageUpload,
-  chatFileUpload
+  chatFileUpload,
+  blogImageUpload
 };
