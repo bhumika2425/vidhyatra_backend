@@ -1,8 +1,12 @@
+// controller/blogController.js
 const Blog = require("../models/blog");
 
 const createBlog = async (req, res) => {
   const { blog_title, blog_description } = req.body;
   const files = req.files; // Correct reference to uploaded files
+
+  console.log('Uploaded files:', files); // Debugging
+  console.log('Request body:', req.body);
 
   if (!blog_title || !blog_description) {
     return res.status(400).json({ message: 'Title and description are required' });
@@ -10,7 +14,7 @@ const createBlog = async (req, res) => {
 
   const serverUrl = 'http://10.0.2.2:3001';
   // Collect URLs of uploaded images
-  const imagePaths = files.map(file => `${serverUrl}uploads/blog-images/${file.filename}`);
+  const imagePaths = files.map(file => `${serverUrl}/uploads/blog-images/${file.filename}`);
 
   try {
     const blog = await Blog.create({ blog_title, blog_description, image_urls: imagePaths, user_id: req.user.user_id });
@@ -19,6 +23,7 @@ const createBlog = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 const getBlogs = async (req, res) => {
     try {

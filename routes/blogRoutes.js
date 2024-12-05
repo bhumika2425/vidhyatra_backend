@@ -9,7 +9,7 @@ router.post("/post", authenticateUser,blogImageUpload,  blogController.createBlo
 
 router.get("/all", authenticateUser, blogController.getBlogs);
 
-router.put("/:blog_id", authenticateUser, blogController.updateBlog);
+router.put("/:blog_id", authenticateUser, blogImageUpload, blogController.updateBlog);
 
 router.delete("/:blog_id", authenticateUser, blogController.deleteBlog);
 

@@ -2,7 +2,7 @@
 // models/Blog.js
 const { DataTypes } = require("sequelize");
 const { sequelizeVidhyatra } = require('../config/db');  // Adjust the path according to your config file location
-const User = require("./User");
+const User = require("./user");
 
 const Blog = sequelizeVidhyatra.define(
   "Blog",
