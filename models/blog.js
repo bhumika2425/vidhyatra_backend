@@ -12,10 +12,6 @@ const Blog = sequelizeVidhyatra.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    blog_title: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     blog_description: {
       type: DataTypes.TEXT,
       allowNull: false,

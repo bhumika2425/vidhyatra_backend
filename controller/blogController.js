@@ -2,14 +2,14 @@
 const Blog = require("../models/blog");
 
 const createBlog = async (req, res) => {
-  const { blog_title, blog_description } = req.body;
+  const { blog_description } = req.body;
   const files = req.files; // Correct reference to uploaded files
 
   console.log('Uploaded files:', files); // Debugging
   console.log('Request body:', req.body);
 
-  if (!blog_title || !blog_description) {
-    return res.status(400).json({ message: 'Title and description are required' });
+  if (!blog_description) {
+    return res.status(400).json({ message: 'Description are required' });
   }
 
   const serverUrl = 'http://10.0.2.2:3001';
@@ -17,7 +17,7 @@ const createBlog = async (req, res) => {
   const imagePaths = files.map(file => `${serverUrl}/uploads/blog-images/${file.filename}`);
 
   try {
-    const blog = await Blog.create({ blog_title, blog_description, image_urls: imagePaths, user_id: req.user.user_id });
+    const blog = await Blog.create({ blog_description, image_urls: imagePaths, user_id: req.user.user_id });
     res.status(201).json(blog);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -56,7 +56,7 @@ const getBlogById = async (req, res) => {
 
 const updateBlog = async (req, res) => {
   const { blog_id } = req.params;
-  const { blog_title, blog_description } = req.body;
+  const { blog_description } = req.body;
 
   try {
     const blog = await Blog.findByPk(blog_id);
@@ -69,7 +69,6 @@ const updateBlog = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    blog.blog_title = blog_title || blog.blog_title;
     blog.blog_description = blog_description || blog.blog_description;
     await blog.save();
 
