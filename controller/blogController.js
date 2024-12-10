@@ -26,14 +26,23 @@ const createBlog = async (req, res) => {
 
 
 const getBlogs = async (req, res) => {
-    try {
-      // Fetch all blogs without pagination
-      const blogs = await Blog.findAll();
-      res.status(200).json(blogs); // Return all blogs
-    } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
-    }
-  };
+  try {
+    // Fetch all blogs without pagination
+    const blogs = await Blog.findAll();
+
+    // Transform the blogs to match the required format
+    const formattedBlogs = blogs.map(blog => ({
+      blog_id: blog.blog_id,
+      blog_description: blog.blog_description,
+      image_urls: blog.image_urls, // Parsed automatically by the getter in the model
+      user_id: blog.user_id,
+    }));
+
+    res.status(200).json({ blogs: formattedBlogs }); // Wrap the blogs in an object
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const getBlogById = async (req, res) => {
   try {

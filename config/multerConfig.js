@@ -130,7 +130,7 @@ const blogImageStorage = multer.diskStorage({
 const blogImageUpload = multer({
   storage: blogImageStorage, // Reusing profile storage or create a new one
   limits: { fileSize: fileSizeLimit },
-}).array('images', 5); // Allow up to 5 images4
+}).array('images', 10); // Allow up to 5 images4
 
 module.exports = {
   profileImageUpload,
