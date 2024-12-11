@@ -1,5 +1,6 @@
 // controller/blogController.js
 const Blog = require("../models/blog");
+const Profile = require("../models/profileModel");
 
 const createBlog = async (req, res) => {
   const { blog_description } = req.body;
@@ -28,15 +29,51 @@ const createBlog = async (req, res) => {
 const getBlogs = async (req, res) => {
   try {
     // Fetch all blogs without pagination
-    const blogs = await Blog.findAll();
+    const blogs = await Blog.findAll({
+      include: [
+        {
+          model: Profile,
+          as: 'profile', // Alias for user profile, adjust based on your model association
+          attributes: ['profileImageUrl', 'full_name'], // Add the attributes you need from the Profile
+        },
+      ],
+    });
+    // Fetch all blogs without pagination
+    // const blogs = await Blog.findAll();
+
+    // // Transform the blogs to match the required format
+    // const formattedBlogs = blogs.map(blog => ({
+    //   blog_id: blog.blog_id,
+    //   blog_description: blog.blog_description,
+    //   image_urls: blog.image_urls, // Parsed automatically by the getter in the model
+    //   user_id: blog.user_id,
+    //   createdAt: blog.createdAt,
+    // }));
 
     // Transform the blogs to match the required format
-    const formattedBlogs = blogs.map(blog => ({
-      blog_id: blog.blog_id,
-      blog_description: blog.blog_description,
-      image_urls: blog.image_urls, // Parsed automatically by the getter in the model
-      user_id: blog.user_id,
-    }));
+    const formattedBlogs = blogs.map(blog => {
+      // Format the createdAt date to a readable string
+      const formattedDate = blog.createdAt.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: true, // Adjust to 12-hour format (set to false for 24-hour format)
+      });
+
+      return {
+        blog_id: blog.blog_id,
+        blog_description: blog.blog_description,
+        image_urls: blog.image_urls, // Parsed automatically by the getter in the model
+        user_id: blog.user_id,
+        createdAt: formattedDate, // Use the formatted date here'
+        profileImageUrl: blog.profile ? blog.profile.profileImageUrl : null,
+        full_name: blog.profile ? blog.profile.full_name : 'Unknown',
+      };
+    });
 
     res.status(200).json({ blogs: formattedBlogs }); // Wrap the blogs in an object
   } catch (error) {
