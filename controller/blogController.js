@@ -1,6 +1,9 @@
 // controller/blogController.js
 const Blog = require("../models/blog");
 const Profile = require("../models/profileModel");
+const Like = require("../models/like");
+const Comment = require("../models/comment");
+
 
 const createBlog = async (req, res) => {
   const { blog_description } = req.body;
@@ -36,19 +39,19 @@ const getBlogs = async (req, res) => {
           as: 'profile', // Alias for user profile, adjust based on your model association
           attributes: ['profileImageUrl', 'full_name'], // Add the attributes you need from the Profile
         },
+        {
+          model: Like,
+          attributes: ["user_id"], // Include likes
+          required: false, // Ensure that blogs without likes are included
+        },
+        {
+          model: Comment,
+          attributes: ["comment_text", "user_id"], // Include comments
+          required: false, // Ensure that blogs without comments are included
+        },
       ],
     });
-    // Fetch all blogs without pagination
-    // const blogs = await Blog.findAll();
-
-    // // Transform the blogs to match the required format
-    // const formattedBlogs = blogs.map(blog => ({
-    //   blog_id: blog.blog_id,
-    //   blog_description: blog.blog_description,
-    //   image_urls: blog.image_urls, // Parsed automatically by the getter in the model
-    //   user_id: blog.user_id,
-    //   createdAt: blog.createdAt,
-    // }));
+    
 
     // Transform the blogs to match the required format
     const formattedBlogs = blogs.map(blog => {
@@ -72,6 +75,8 @@ const getBlogs = async (req, res) => {
         createdAt: formattedDate, // Use the formatted date here'
         profileImageUrl: blog.profile ? blog.profile.profileImageUrl : null,
         full_name: blog.profile ? blog.profile.full_name : 'Unknown',
+        likes: blog.Likes ? blog.Likes.length : 0, // Count likes
+        comments: blog.Comments || [], // Include comments
       };
     });
 
@@ -145,4 +150,50 @@ const deleteBlog = async (req, res) => {
   }
 };
 
-module.exports = { createBlog, getBlogs, updateBlog, deleteBlog , getBlogById };
+const likeBlog = async (req, res) => {
+  const { blog_id } = req.params;
+
+  try {
+    // Check if blog exists
+    const blog = await Blog.findByPk(blog_id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    // Check if the user already liked this blog
+    const existingLike = await Like.findOne({ where: { blog_id, user_id: req.user.user_id } });
+    if (existingLike) {
+      return res.status(400).json({ message: "You have already liked this blog" });
+    }
+
+    // Add a new like
+    await Like.create({ blog_id, user_id: req.user.user_id });
+    res.status(200).json({ message: "Blog liked successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+const commentOnBlog = async (req, res) => {
+  const { blog_id } = req.params;
+  const { comment_text } = req.body;
+
+  if (!comment_text) return res.status(400).json({ message: "Comment text is required" });
+
+  try {
+    // Check if blog exists
+    const blog = await Blog.findByPk(blog_id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    // Add a new comment
+    const comment = await Comment.create({
+      blog_id,
+      user_id: req.user.user_id,
+      comment_text,
+    });
+
+    res.status(201).json({ message: "Comment added successfully", comment });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+module.exports = { createBlog, getBlogs, updateBlog, deleteBlog , getBlogById , likeBlog, commentOnBlog};

@@ -16,4 +16,8 @@ router.delete("/:blog_id", authenticateUser, blogController.deleteBlog);
 // Fetch a specific blog by ID
 router.get('/:blog_id', authenticateUser, blogController.getBlogById);
 
+router.post("/:blog_id/like", authenticateUser, blogController.likeBlog);
+router.post("/:blog_id/comment", authenticateUser, blogController.commentOnBlog);
+
+
 module.exports = router;

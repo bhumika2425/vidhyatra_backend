@@ -1,9 +1,9 @@
-
 // // models/Blog.js
 // const { DataTypes } = require("sequelize");
 // const { sequelizeVidhyatra } = require('../config/db');  // Adjust the path according to your config file location
 // const User = require("./user");
 // const Profile = require("./profileModel");
+// const Like = require("../models/")
 
 // const Blog = sequelizeVidhyatra.define(
 //   "Blog",
@@ -48,15 +48,21 @@
 // // Associate Blog with User
 // Blog.belongsTo(User, { foreignKey: "user_id" });
 
-// // Optionally: Associate Blog with Profile through User
-// Blog.belongsTo(Profile, { foreignKey: 'user_id', targetKey: 'user_id' });
+// // Corrected association: Associate Blog with Profile using the correct alias
+// Blog.belongsTo(Profile, { foreignKey: 'user_id', targetKey: 'user_id', as: 'profile' }); // Alias 'profile' added here
+
+// // Reverse association: A Blog has many Likes
+// Blog.hasMany(Like, { foreignKey: "blog_id", as: "likes" });
 
 // module.exports = Blog;
 
+// models/Blog.js
 const { DataTypes } = require("sequelize");
-const { sequelizeVidhyatra } = require('../config/db');  // Adjust the path according to your config file location
+const { sequelizeVidhyatra } = require('../config/db');  // Ensure correct path to db.js
 const User = require("./user");
 const Profile = require("./profileModel");
+const Like = require("./like"); // Import the Like model
+const Comment = require("./comment");
 
 const Blog = sequelizeVidhyatra.define(
   "Blog",
@@ -101,7 +107,14 @@ const Blog = sequelizeVidhyatra.define(
 // Associate Blog with User
 Blog.belongsTo(User, { foreignKey: "user_id" });
 
-// Corrected association: Associate Blog with Profile using the correct alias
+// Associate Blog with Profile
 Blog.belongsTo(Profile, { foreignKey: 'user_id', targetKey: 'user_id', as: 'profile' }); // Alias 'profile' added here
+
+// Ensure the Like model is associated correctly
+Blog.hasMany(Like, { foreignKey: 'blog_id' });  // Corrected here
+
+Blog.hasMany(Comment, { foreignKey: 'blog_id' });  // Corrected here
+
+
 
 module.exports = Blog;
