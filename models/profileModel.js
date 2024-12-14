@@ -87,6 +87,17 @@ const Profile = sequelizeVidhyatra.define('Profile', {
     profileImageUrl: {
         type: DataTypes.STRING(255),
     },
+    // created_at: {
+    //     type: DataTypes.DATE, // Changed from TIMESTAMP to DATE
+    //     defaultValue: DataTypes.NOW,
+    //     field: 'created_at', // to match your SQL table's column name
+    // },
+    // updated_at: { // Add updated_at field to your model
+    //     type: DataTypes.DATE,
+    //     defaultValue: DataTypes.NOW,
+    //     field: 'updated_at', // to match your SQL table's column name
+    //     onUpdate: DataTypes.NOW // Automatically update this field on record update
+    // }
 }, {
     timestamps: true,
     tableName: 'profiles',
