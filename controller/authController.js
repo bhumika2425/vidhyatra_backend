@@ -8,22 +8,45 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto'); // To generate a secure OTP
 
 
+// const registerStudent = async (req, res) => {
+//     const { collegeId, name, email, password, role } = req.body;
+
+//     try {
+//         const result = await UserService.registerStudent(collegeId, name, email, password, role);
+//         res.status(201).json(result);
+//     } catch (error) {
+//         console.error(error); // Log the error to the console
+//         // Check for the specific error message
+//         if (error.message === 'Student ID or email not found in college database.') {
+//             return res.status(400).json({ message: error.message }); // Send specific error message
+//         }
+//         // Handle other server errors
+//         res.status(500).json({ message: 'Server error', error: error.message }); // Return the error message
+//     }
+// };
 const registerStudent = async (req, res) => {
     const { collegeId, name, email, password, role } = req.body;
 
     try {
         const result = await UserService.registerStudent(collegeId, name, email, password, role);
-        res.status(201).json(result);
+
+        // Include a clear success message
+        res.status(201).json({
+            message: 'Registration successful!',
+            data: {
+                name: result.name,
+                email: result.email,
+            },
+        });
     } catch (error) {
         console.error(error); // Log the error to the console
-        // Check for the specific error message
         if (error.message === 'Student ID or email not found in college database.') {
             return res.status(400).json({ message: error.message }); // Send specific error message
         }
-        // Handle other server errors
-        res.status(500).json({ message: 'Server error', error: error.message }); // Return the error message
+        res.status(500).json({ message: 'Server error', error: error.message }); // Return generic error
     }
 };
+
 
 // Create a const function for user login logic
 const loginUser = async (req, res) => {
@@ -139,5 +162,19 @@ const resetPassword = async (req, res) => {
     }
 };
 
+const getAllUsers = async (req, res) => {
+    const userId = req.user.user_id;  // Extract the user ID from the JWT token
 
-module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword };
+    try {
+        const users = await UserService.getAllUsers(userId); // Pass userId to the service to exclude it
+        res.status(200).json({
+            message: 'Users retrieved successfully',
+            data: users,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, };

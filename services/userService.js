@@ -1,3 +1,4 @@
+// services/userService.js
 const jwt = require('jsonwebtoken'); // Import JWT
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
@@ -53,7 +54,47 @@ const loginUser = async (identifier, password) => {
     return { message: 'Login successful!', user: userData, token }; // Return token along with user data
 };
 
+const getAllUsers = async (currentUserId) => {
+    try {
+        const users = await User.findAll({
+            where: {
+                user_id: { [Op.ne]: currentUserId }  // Exclude the current user's ID
+            },
+            attributes: { exclude: ['password', 'otp', 'otpExpiry'] }, // Exclude sensitive fields
+        });
+        return users;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Unable to fetch users');
+    }
+};
+
+// const getAllUsers = async (req, res) => {
+//     const { page = 1, limit = 10 } = req.query; // Default to page 1, 10 users per page
+//     const offset = (page - 1) * limit;
+
+//     try {
+//         const { rows: users, count } = await User.findAndCountAll({
+//             offset,
+//             limit: parseInt(limit, 10),
+//             attributes: { exclude: ['password', 'otp', 'otpExpiry'] },
+//         });
+//         res.status(200).json({
+//             message: 'Users retrieved successfully',
+//             data: users,
+//             total: count,
+//             totalPages: Math.ceil(count / limit),
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'Server error', error: error.message });
+//     }
+// };
+
+
+
 module.exports = {
     registerStudent,
-    loginUser
+    loginUser,
+    getAllUsers, // Add the function to exports
 };
