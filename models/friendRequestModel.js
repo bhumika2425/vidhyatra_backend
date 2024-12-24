@@ -1,3 +1,5 @@
+//models./friendRequestModel.js
+
 const { DataTypes } = require('sequelize');
 const { sequelizeVidhyatra } = require('../config/db');// Adjust the path to your Sequelize configuration file
 

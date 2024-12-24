@@ -1,3 +1,5 @@
+
+//controller/friendRequestController.js
 const { sendRequest, getRequests, respondToRequest } = require('../services/friendRequestService');
 
 // Function to send a friend request

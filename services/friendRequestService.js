@@ -1,3 +1,5 @@
+//service/friendRequestService.js
+
 const FriendRequest = require('../models/friendRequestModel');
 
 // Function to send a friend request
