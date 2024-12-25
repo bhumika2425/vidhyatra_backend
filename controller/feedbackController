@@ -1,0 +1,50 @@
+const FeedbackService = require('../services/feedbackService');
+
+class FeedbackController {
+  // Submit Feedback (POST request)
+  static async submitFeedback(req, res) {
+    try {
+      const { user_id, user_role, feedback_type, feedback_content, is_anonymous } = req.body;
+
+      if (!user_id || !user_role || !feedback_type || !feedback_content) {
+        return res.status(400).json({ message: 'All fields are required!' });
+      }
+
+      const feedbackData = {
+        user_id,
+        user_role,
+        feedback_type,
+        feedback_content,
+        is_anonymous
+      };
+
+      const feedback = await FeedbackService.submitFeedback(feedbackData);
+      return res.status(201).json({ message: 'Feedback submitted successfully', feedback });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to submit feedback', error: error.message });
+    }
+  }
+
+  // Get All Feedback (for admin)
+  static async getAllFeedback(req, res) {
+    try {
+      const feedbacks = await FeedbackService.getAllFeedback();
+      return res.status(200).json({ feedbacks });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to retrieve feedback', error: error.message });
+    }
+  }
+
+  // Get Feedback by User (for users to view their feedback)
+  static async getFeedbackByUser(req, res) {
+    const { user_id } = req.params;
+    try {
+      const feedbacks = await FeedbackService.getFeedbackByUser(user_id);
+      return res.status(200).json({ feedbacks });
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to retrieve user feedback', error: error.message });
+    }
+  }
+}
+
+module.exports = FeedbackController;
