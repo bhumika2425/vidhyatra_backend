@@ -4,15 +4,13 @@ class FeedbackController {
   // Submit Feedback (POST request)
   static async submitFeedback(req, res) {
     try {
-      const { user_id, user_role, feedback_type, feedback_content, is_anonymous } = req.body;
+      const { feedback_type, feedback_content, is_anonymous } = req.body;
 
-      if (!user_id || !user_role || !feedback_type || !feedback_content) {
+      if ( !feedback_type || !feedback_content) {
         return res.status(400).json({ message: 'All fields are required!' });
       }
 
       const feedbackData = {
-        user_id,
-        user_role,
         feedback_type,
         feedback_content,
         is_anonymous

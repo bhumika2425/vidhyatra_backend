@@ -5,11 +5,7 @@ const { sequelizeVidhyatra } = require('../config/db');
 const Feedback = sequelizeVidhyatra.define('Feedback', {
   user_id: {
     type: DataTypes.STRING,
-    allowNull: false,
-  },
-  user_role: {
-    type: DataTypes.ENUM('student', 'teacher'),
-    allowNull: false,
+    allowNull: true,
   },
   feedback_type: {
     type: DataTypes.ENUM('courses', 'app_features', 'facilities'),
