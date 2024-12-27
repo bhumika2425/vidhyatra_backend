@@ -5,7 +5,7 @@ const { sequelizeVidhyatra } = require('../config/db');
 const Feedback = sequelizeVidhyatra.define('Feedback', {
   user_id: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   feedback_type: {
     type: DataTypes.ENUM('courses', 'app_features', 'facilities'),
@@ -24,8 +24,5 @@ const Feedback = sequelizeVidhyatra.define('Feedback', {
     defaultValue: DataTypes.NOW,
   },
 });
-
-// Sync the model with the database
-Feedback.sync({ alter: true }); // This will create the table if it doesn't exist or update it if necessary
 
 module.exports = Feedback;
