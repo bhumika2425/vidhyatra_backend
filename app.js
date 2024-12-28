@@ -6,6 +6,8 @@ const messagingRoutes = require('./routes/messaging.js'); // Import messaging ro
 const blogRoutes = require('./routes/blogRoutes');
 const friendRequestRoutes = require('./routes/friendRequestRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+// const academicCalendarRoutes = require('./routes/academicCalendarRoutes');
+const eventCalendarRoutes = require('./routes/eventCalendarRoutes');
 
 const path = require('path'); 
 const {profileImageUpload, chatFileUpload} = require('./config/multerConfig'); // Multer configuration imported here
@@ -25,6 +27,8 @@ app.use('/api/messages', messagingRoutes); // Add messaging routes
 app.use('/api/blog', blogRoutes);
 app.use('/api/friendRequest', friendRequestRoutes);
 app.use('/api/feedback', feedbackRoutes);
+// app.use('/api', academicCalendarRoutes);
+app.use('/api', eventCalendarRoutes);
 
 // Route for handling profile image upload
 app.post('/uploads/profile-image', profileImageUpload.single('profileImage'), (req, res) => {
