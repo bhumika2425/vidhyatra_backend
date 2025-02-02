@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user'); // Adjust path to your user model
+const User = require('../models/user'); // Adjust path to your model
 
 const authenticateUser = async (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -16,11 +16,11 @@ const authenticateUser = async (req, res, next) => {
 
     try {
         // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Ensure the secret is set in your environment variables
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Ensure the secret is set in environment variables
         console.log("Decoded token:", decoded); // Log the decoded token
 
         // Fetch the user by ID and attach it to req.user
-        const user = await User.findByPk(decoded.user_id); // Adjust the key to match your token's payload
+        const user = await User.findByPk(decoded.user_id); // Adjust the key to match token's payload
 
         if (!user) {
             console.log("User not found.");

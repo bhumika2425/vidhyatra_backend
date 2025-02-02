@@ -21,7 +21,7 @@ const registerStudent = async (collegeId, name, email, password, role = 'Student
     const hashedPassword = await bcrypt.hash(password, 10);
     await User.create({ college_id: collegeId, name, email, password: hashedPassword, role });
 
-    return { message: 'Registration successful!' };
+    return { name, email, message: 'Registration successful!' };
 };
 
 const loginUser = async (identifier, password) => {
@@ -58,7 +58,8 @@ const getAllUsers = async (currentUserId) => {
     try {
         const users = await User.findAll({
             where: {
-                user_id: { [Op.ne]: currentUserId }  // Exclude the current user's ID
+                user_id: { [Op.ne]: currentUserId },  // Exclude the current user's ID
+                isAdmin: false // Exclude admin users
             },
             attributes: { exclude: ['password', 'otp', 'otpExpiry'] }, // Exclude sensitive fields
         });

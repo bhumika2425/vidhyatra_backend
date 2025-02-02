@@ -43,29 +43,6 @@ app.post('/uploads/profile-image', profileImageUpload.single('profileImage'), (r
 // Set static folder for serving uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Real-time messaging feature
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
-
-    // Listen for a "sendMessage" event
-    socket.on('sendMessage', (data) => {
-        console.log('Message received:', data);
-
-        // Broadcast the message to the receiver
-        io.to(data.receiverId).emit('receiveMessage', data);
-    });
-
-    // Join a room for private messaging
-    socket.on('joinRoom', (roomId) => {
-        socket.join(roomId);
-        console.log(`User ${socket.id} joined room: ${roomId}`);
-    });
-
-    // Handle disconnection
-    socket.on('disconnect', () => {
-        console.log('A user disconnected:', socket.id);
-    });
-});
 
 // Sync Sequelize models and start the server
 const { sequelizeVidhyatra } = require('./config/db');

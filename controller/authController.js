@@ -170,9 +170,11 @@ const getAllUsers = async (req, res) => {
 
     try {
         const users = await UserService.getAllUsers(userId); // Pass userId to the service to exclude it
+        const nonAdminUsers = users.filter(user => !user.isAdmin); // Exclude admins
+
         res.status(200).json({
             message: 'Users retrieved successfully',
-            data: users,
+            data: nonAdminUsers,
         });
     } catch (error) {
         console.error(error);
