@@ -1,4 +1,3 @@
-
 //controller/friendRequestController.js
 const { sendRequest, getRequests, respondToRequest } = require('../services/friendRequestService');
 
@@ -6,8 +5,13 @@ const { sendRequest, getRequests, respondToRequest } = require('../services/frie
 const sendFriendRequest = async (req, res) => {
     try {
         const { sender_id, receiver_id } = req.body;
-        const request = await sendRequest(sender_id, receiver_id);
-        res.status(201).json({ message: 'Friend request sent successfully', request });
+        const { request, sender_email, sender_name } = await sendRequest(sender_id, receiver_id);  // Destructure correctly
+        res.status(201).json({
+            message: 'Friend request sent successfully',
+            request,  // Return the request data
+            sender_email,  // Return sender's email
+            sender_name
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -3,6 +3,7 @@
 const FriendRequest = require('../models/friendRequestModel');
 const { Op } = require('sequelize');
 const Friend = require('../models/friend');
+const User = require('../models/user');
 
 
 const sendRequest = async (sender_id, receiver_id) => {
@@ -35,14 +36,38 @@ const sendRequest = async (sender_id, receiver_id) => {
     }
 
     // Create a new friend request
-    return await FriendRequest.create({ sender_id, receiver_id, status: 'pending' });
+    const request = await FriendRequest.create({ sender_id, receiver_id, status: 'pending' });
+
+    // Fetch the sender's email
+    const sender = await User.findByPk(sender_id);  // Assuming you have a User model
+    if (!sender) {
+        throw new Error('Sender not found');
+    }
+
+    return { request, sender_email: sender.email, sender_name: sender.name };
 };
 
 // Function to get friend requests for a specific user
 const getRequests = async (userId) => {
-    return await FriendRequest.findAll({
+    const requests = await FriendRequest.findAll({
         where: { receiver_id: userId, status: 'pending' },
     });
+
+    // Fetch the sender's email and name for each request
+    const requestsWithSenderInfo = await Promise.all(requests.map(async (request) => {
+        const sender = await User.findByPk(request.sender_id);  // Fetch sender's details
+        if (sender) {
+            return {
+                ...request.toJSON(),
+                sender_email: sender.email,
+                sender_name: sender.name,
+                sender_role: sender.role
+            };
+        }
+        return request;
+    }));
+
+    return requestsWithSenderInfo;
 };
 
 // Function to respond to a friend request
