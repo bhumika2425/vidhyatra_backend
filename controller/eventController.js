@@ -2,7 +2,7 @@ const Event = require('../models/eventModel');
 
 // Admin: Post a new event
 exports.createEvent = async (req, res) => {
-    const { title, description, date } = req.body;
+    const { title, description, event_date } = req.body;
 
     try {
         if (!req.user.isAdmin) {
@@ -12,7 +12,7 @@ exports.createEvent = async (req, res) => {
         const newEvent = await Event.create({
             title,
             description,
-            date,
+            event_date,
             created_by: req.user.user_id,
         });
 
@@ -26,7 +26,7 @@ exports.createEvent = async (req, res) => {
 exports.getEvents = async (req, res) => {
     try {
         const events = await Event.findAll({
-            order: [['date', 'ASC']], // Sort events by date
+            order: [['event_date', 'ASC']], // Sort events by date
         });
         res.status(200).json(events);
     } catch (error) {
