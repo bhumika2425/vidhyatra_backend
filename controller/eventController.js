@@ -45,3 +45,4 @@ exports.getEventsByDate = async (req, res) => {
         res.status(500).json({ message: 'Error fetching events for the date.', error: error.message });
     }
 };
+//comment
