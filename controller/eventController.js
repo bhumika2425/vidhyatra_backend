@@ -1,8 +1,8 @@
 const Event = require('../models/eventModel');
 
 // Admin: Post a new event
-exports.createEvent = async (req, res) => {
-    const { title, description, event_date } = req.body;
+const createEvent = async (req, res) => {
+    const { title, description, event_date, venue } = req.body;
 
     try {
         if (!req.user.isAdmin) {
@@ -12,6 +12,7 @@ exports.createEvent = async (req, res) => {
         const newEvent = await Event.create({
             title,
             description,
+            venue,
             event_date,
             created_by: req.user.user_id,
         });
@@ -23,7 +24,7 @@ exports.createEvent = async (req, res) => {
 };
 
 // Users: Get all events
-exports.getEvents = async (req, res) => {
+const getEvents = async (req, res) => {
     try {
         const events = await Event.findAll({
             order: [['event_date', 'ASC']], // Sort events by date
@@ -35,7 +36,7 @@ exports.getEvents = async (req, res) => {
 };
 
 // Users: Get events for a specific date
-exports.getEventsByDate = async (req, res) => {
+const getEventsByDate = async (req, res) => {
     const { date } = req.params;
 
     try {
@@ -45,4 +46,9 @@ exports.getEventsByDate = async (req, res) => {
         res.status(500).json({ message: 'Error fetching events for the date.', error: error.message });
     }
 };
-//comment
+
+module.exports = {
+    createEvent,
+    getEvents,
+    getEventsByDate,
+};

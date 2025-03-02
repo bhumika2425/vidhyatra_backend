@@ -16,6 +16,10 @@ const Event = sequelizeVidhyatra.define('Event', {
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    venue: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+    },
     event_date: {
         type: DataTypes.DATE,
         allowNull: false,
