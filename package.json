@@ -9,6 +9,7 @@
   "author": "bhumika k.c.",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.8.2",
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",

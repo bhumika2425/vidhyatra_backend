@@ -48,6 +48,9 @@ app.post('/uploads/profile-image', profileImageUpload.single('profileImage'), (r
 // Set static folder for serving uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/test.html");
+  });
 
 // Sync Sequelize models and start the server
 const { sequelizeVidhyatra } = require('./config/db');

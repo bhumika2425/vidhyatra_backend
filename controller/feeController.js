@@ -80,25 +80,7 @@ const getFeeById = async (req, res) => {
   }
 };
 
-// // Update a fee (Admin only)
-// const updateFee = async (req, res) => {
-//   try {
-//     const { feeType, feeDescription, feeAmount, dueDate } = req.body;
 
-//     // Ensure that the authenticated user is an admin
-//     if (!req.user.isAdmin) {
-//       return res.status(403).json({ message: "Access denied. Only admins can update fees." });
-//     }
-
-//     const fee = await Fee.findByPk(req.params.id);
-//     if (!fee) return res.status(404).json({ message: "Fee not found" });
-
-//     await fee.update({ feeType, feeDescription, feeAmount, dueDate });
-//     res.status(200).json({ message: "Fee updated successfully", fee });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
 
 const updateFee = async (req, res) => {
     try {

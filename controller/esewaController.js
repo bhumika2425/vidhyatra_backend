@@ -1,60 +1,75 @@
 const { getEsewaPaymentHash, verifyEsewaPayment } = require("../esewa/esewa");
 const { v4: uuidv4 } = require("uuid");
-const Item = require("../models/itemModel");
-const PurchasedItem = require("../models/purchasedItemModel");
+const Fee = require("../models/fee");
+const PaidFees = require("../models/paidFeesModel");
 const Payment = require("../models/paymentModel");
 
 const initializePayment = async (req, res) => {
-  try {
-    const { itemId, totalPrice } = req.body;
-
-    // Validate item exists and price matches
-    const itemData = await Item.findOne({
-      where: { itemId, price: Number(totalPrice) },
-      attributes: ['price'],
-    });
-
-    if (!itemData) {
-      return res.status(400).send({
+    try {
+      const { feeID, feeAmount } = req.body;
+  
+      // Debugging: Log the received feeID and totalPrice from the request body
+      console.log("Received feeID:", feeID);
+      console.log("Received totalPrice:", feeAmount);
+  
+      // Validate item exists and feeAmount matches
+      const feeData = await Fee.findOne({
+        where: { feeID, feeAmount: Number(feeAmount) },
+        attributes: ['feeAmount', 'feeID'],
+      });
+  
+      // Debugging: Log the result of the feeData query
+      console.log("Fee Data from DB:", feeData);
+  
+      if (!feeData) {
+        return res.status(400).send({
+          success: false,
+          message: "Fee not found or feeAmount mismatch.",
+        });
+      }
+  
+      // Debugging: Log that the fee was successfully found
+      console.log("Fee found, proceeding with payment initialization.");
+  
+      // Create purchase record with UUID
+      const paidFeesId = uuidv4();
+      const paidFeesData = await PaidFees.create({
+        paidFeesId,
+        feeID,
+        paymentMethod: "esewa",
+        totalPrice: feeAmount,
+      });
+  
+      // Debugging: Log the created paidFees data
+      console.log("Created Paid Fees Data:", paidFeesData);
+  
+      // Initiate payment with eSewa
+      const paymentInitiate = await getEsewaPaymentHash({
+        amount: feeAmount,
+        transaction_uuid: paidFeesData.paidFeesId,
+      });
+  
+      // Debugging: Log the payment initiation data
+      console.log("Payment Initiated with eSewa:", paymentInitiate);
+  
+      res.json({
+        success: true,
+        payment: paymentInitiate,
+        paidFeesData,
+        // commission_amount: commissionAmount,
+        // amount_with_commission: totalPriceWithCommission
+      });
+    } catch (error) {
+      // Debugging: Log the error if something goes wrong
+      console.error("Error during payment initialization:", error);
+  
+      res.status(500).json({
         success: false,
-        message: "Item not found or price mismatch.",
+        error: error.message,
       });
     }
+  };
 
-    // Calculate 5% commission
-    // const commissionAmount = (totalPrice * 0.05).toFixed(2);
-    // const totalPriceWithCommission = (parseFloat(totalPrice) + parseFloat(commissionAmount)).toFixed(2);
-
-
-    // Create purchase record with UUID
-    const purchasedItemId = uuidv4();
-    const purchasedItemData = await PurchasedItem.create({
-      purchasedItemId,
-      itemId,
-      paymentMethod: "esewa",
-      totalPrice,
-    });
-
-    // Initiate payment with eSewa
-    const paymentInitiate = await getEsewaPaymentHash({
-      amount: totalPrice,
-      transaction_uuid: purchasedItemData.purchasedItemId,
-    });
-
-    res.json({
-      success: true,
-      payment: paymentInitiate,
-      purchasedItemData,
-      // commission_amount: commissionAmount,
-      // amount_with_commission: totalPriceWithCommission
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
 
 const completePayment = async (req, res) => {
   const { data } = req.query;
@@ -69,8 +84,8 @@ const completePayment = async (req, res) => {
     }
 
     // Fetch purchased item
-    const purchasedItemData = await PurchasedItem.findByPk(transactionUuid);
-    if (!purchasedItemData) {
+    const paidFeesData = await PaidFees.findByPk(transactionUuid);
+    if (!paidFeesData) {
       return res.status(500).json({ success: false, message: "Purchase not found" });
     }
 
@@ -78,19 +93,19 @@ const completePayment = async (req, res) => {
     const paymentData = {
       pidx: paymentInfo.decodedData.transaction_code,
       transactionId: paymentInfo.decodedData.transaction_code,
-      amount: purchasedItemData.totalPrice,
+      amount: paidFeesData.totalPrice,
       dataFromVerificationReq: paymentInfo,
       apiQueryFromUser: req.query,
       paymentGateway: "esewa",
       status: "success",
-      purchasedItemId: purchasedItemData.purchasedItemId,
+      paidFeesId: paidFeesData.paidFeesId,
     };
 
     // Save payment record
     const paymentRecord = await Payment.create(paymentData);
 
     // Update purchase status to completed
-    await PurchasedItem.update({ status: "completed" }, { where: { purchasedItemId: transactionUuid } });
+    await PaidFees.update({ status: "completed" }, { where: { paidFeesId: transactionUuid } });
 
     res.json({ success: true, message: "Payment successful", paymentRecord });
   } catch (error) {
