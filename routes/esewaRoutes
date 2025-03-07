@@ -1,0 +1,8 @@
+const express = require("express");
+const router = express.Router();
+const esewaController = require("../controller/esewaController");
+
+router.post("/initialize-esewa", esewaController.initializePayment);
+router.get("/complete-payment", esewaController.completePayment);
+
+module.exports = router;

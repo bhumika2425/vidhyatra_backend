@@ -8,6 +8,8 @@ const friendRequestRoutes = require('./routes/friendRequestRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 // const academicCalendarRoutes = require('./routes/academicCalendarRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const feeRoutes = require('./routes/feeRoutes');
+const esewaRoutes = require("./routes/esewaRoutes");
 
 const path = require('path'); 
 const {profileImageUpload, chatFileUpload} = require('./config/multerConfig'); // Multer configuration imported here
@@ -29,6 +31,9 @@ app.use('/api/friendRequest', friendRequestRoutes);
 app.use('/api/feedback', feedbackRoutes);
 // app.use('/api', academicCalendarRoutes);
 app.use('/api/eventCalender', eventRoutes);
+app.use('/api/collegeFees', feeRoutes)
+// Use eSewa routes
+app.use("/api/payFees", esewaRoutes);
 
 // Route for handling profile image upload
 app.post('/uploads/profile-image', profileImageUpload.single('profileImage'), (req, res) => {
