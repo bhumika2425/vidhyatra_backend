@@ -21,7 +21,11 @@ const Event = sequelizeVidhyatra.define('Event', {
         allowNull: false,
     },
     event_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+    },
+    event_start_time: {  // ⏰ New field
+        type: DataTypes.STRING(40), // Store time as HH:MM AM/PM or 24-hour format
         allowNull: false,
     },
     created_by: {

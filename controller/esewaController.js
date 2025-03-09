@@ -1,3 +1,4 @@
+//controller/esewaController.js
 const { getEsewaPaymentHash, verifyEsewaPayment } = require("../esewa/esewa");
 const { v4: uuidv4 } = require("uuid");
 const Fee = require("../models/fee");
@@ -7,6 +8,9 @@ const Payment = require("../models/paymentModel");
 const initializePayment = async (req, res) => {
     try {
       const { feeID, feeAmount } = req.body;
+      const userId = req.user.user_id; // Get authenticated user ID
+
+      console.log("Authenticated User ID:", userId); // Debugging log
   
       // Debugging: Log the received feeID and totalPrice from the request body
       console.log("Received feeID:", feeID);
@@ -38,6 +42,7 @@ const initializePayment = async (req, res) => {
         feeID,
         paymentMethod: "esewa",
         totalPrice: feeAmount,
+        user_id: userId,
       });
   
       // Debugging: Log the created paidFees data
@@ -56,8 +61,6 @@ const initializePayment = async (req, res) => {
         success: true,
         payment: paymentInitiate,
         paidFeesData,
-        // commission_amount: commissionAmount,
-        // amount_with_commission: totalPriceWithCommission
       });
     } catch (error) {
       // Debugging: Log the error if something goes wrong
@@ -74,6 +77,9 @@ const initializePayment = async (req, res) => {
 const completePayment = async (req, res) => {
   const { data } = req.query;
 
+  // const userId = req.user.user_id; // Get authenticated user ID
+
+
   try {
     // Verify payment with eSewa
     const paymentInfo = await verifyEsewaPayment(data);
@@ -88,6 +94,11 @@ const completePayment = async (req, res) => {
     if (!paidFeesData) {
       return res.status(500).json({ success: false, message: "Purchase not found" });
     }
+
+    // Ensure that only the user who initiated the payment can complete it
+    // if (paidFeesData.userId !== userId) {
+    //   return res.status(403).json({ success: false, message: "Unauthorized: This payment does not belong to you." });
+    // }
 
     // Prepare payment data
     const paymentData = {

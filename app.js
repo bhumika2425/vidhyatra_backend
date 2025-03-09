@@ -2,38 +2,36 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profile');
-const messagingRoutes = require('./routes/messaging.js'); // Import messaging routes
 const blogRoutes = require('./routes/blogRoutes');
 const friendRequestRoutes = require('./routes/friendRequestRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
-// const academicCalendarRoutes = require('./routes/academicCalendarRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const esewaRoutes = require("./routes/esewaRoutes");
 
+
 const path = require('path'); 
 const {profileImageUpload, chatFileUpload} = require('./config/multerConfig'); // Multer configuration imported here
 const http = require('http'); // HTTP module for server
-const { Server } = require('socket.io'); // Socket.IO server for real-time communication
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app); // Create HTTP server
-const io = new Server(server); // Initialize Socket.IO
 
 app.use(bodyParser.json());
 
+
+
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
-app.use('/api/messages', messagingRoutes); // Add messaging routes
 app.use('/api/blog', blogRoutes);
 app.use('/api/friendRequest', friendRequestRoutes);
 app.use('/api/feedback', feedbackRoutes);
-// app.use('/api', academicCalendarRoutes);
 app.use('/api/eventCalender', eventRoutes);
 app.use('/api/collegeFees', feeRoutes)
-// Use eSewa routes
 app.use("/api/payFees", esewaRoutes);
+
+
 
 // Route for handling profile image upload
 app.post('/uploads/profile-image', profileImageUpload.single('profileImage'), (req, res) => {
@@ -48,9 +46,15 @@ app.post('/uploads/profile-image', profileImageUpload.single('profileImage'), (r
 // Set static folder for serving uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
+
+
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/test.html");
   });
+
+
+  
 
 // Sync Sequelize models and start the server
 const { sequelizeVidhyatra } = require('./config/db');
