@@ -29,7 +29,7 @@ const registerStudent = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message }); // Return generic error
         // TODO: already registered wala mesaage baki
         // TODO: validation garna baki cha register ma
-        //TODO: frontened ma icon haru ko color fherna cha ani euta lai feresi sabai huni wala lekhni 
+        //TODO: frontened ma icon haru ko color fherna cha ani euta lai feresi sabai huni wala lekhnii
     }
 };
 
