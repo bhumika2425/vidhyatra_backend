@@ -45,7 +45,7 @@ PaidFees.belongsTo(Fee, {
 PaidFees.belongsTo(User, {
   foreignKey: 'user_id', // Link PaidFees to User
   allowNull: false,
-  onDelete: 'CASCADE', // If a user is deleted, remove their paymentss
+  onDelete: 'CASCADE', // If a user is deleted, remove their payment
 });
 
 module.exports = PaidFees;
