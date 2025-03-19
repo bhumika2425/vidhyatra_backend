@@ -17,9 +17,17 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app); // Create HTTP server
+const cors = require("cors");
 
 app.use(bodyParser.json());
 
+
+
+app.use(cors({
+    origin: "*", // Allow all origins (for testing)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 
 app.use('/api/auth', authRoutes);

@@ -48,7 +48,7 @@ const verifyEsewaPayment = async (encodedData) => {
         // Ensure consistency: Remove commas from total_amount before comparison
         const formattedAmount = decodedData.total_amount.replace(/,/g, "");  // Remove commas here as well
         
-        // Validate required fields
+        // Validate required fieldss
         const requiredFields = ['transaction_code', 'status', 'total_amount', 'transaction_uuid', 'signature'];
         let missingFields = [];
 
