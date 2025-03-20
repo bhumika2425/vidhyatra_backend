@@ -70,6 +70,19 @@ const getAllUsers = async (currentUserId) => {
     }
 };
 
+const getAllStudents = async () => {
+    try {
+        const students = await User.findAll({
+            where: { role: 'Student' },  // Only fetch users with role "Student"
+            attributes: { exclude: ['password', 'otp', 'otpExpiry'] }, // Exclude sensitive fields
+        });
+        return students;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Unable to fetch students');
+    }
+};
+
 // const getAllUsers = async (req, res) => {
 //     const { page = 1, limit = 10 } = req.query; // Default to page 1, 10 users per page
 //     const offset = (page - 1) * limit;
@@ -97,5 +110,6 @@ const getAllUsers = async (currentUserId) => {
 module.exports = {
     registerStudent,
     loginUser,
-    getAllUsers, // Add the function to exports
+    getAllUsers,
+    getAllStudents,  // Add the function to exports
 };

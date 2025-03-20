@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken'); // Import JWT for token generation
 const bcrypt = require('bcrypt'); // Assuming you're using bcrypt for password hashing
 const nodemailer = require('nodemailer');
 const crypto = require('crypto'); // To generate a secure OTP
+const {getAllStudents} = require('../services/userService');
 
 const registerStudent = async (req, res) => {
     const { collegeId, name, email, password, role } = req.body;
@@ -165,4 +166,15 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, };
+const getStudents = async (req, res) => {
+    try {
+        const students = await getAllStudents();
+        res.status(200).json({ message: 'Students retrieved successfully', data: students });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+
+module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents};
