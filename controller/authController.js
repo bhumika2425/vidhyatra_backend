@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt'); // Assuming you're using bcrypt for password h
 const nodemailer = require('nodemailer');
 const crypto = require('crypto'); // To generate a secure OTP
 const {getAllStudents} = require('../services/userService');
+const {getAllTeachers} = require('../services/userService');
 
 const registerStudent = async (req, res) => {
     const { collegeId, name, email, password, role } = req.body;
@@ -175,6 +176,16 @@ const getStudents = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-
-
-module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents};
+const getTeachers = async (req, res) => {
+    try {
+        const teachers = await getAllTeachers();
+        res.status(200).json({
+            message: 'Teachers retrieved successfully',
+            data: teachers,
+        });
+    } catch (error) {
+        console.error('Error fetching teachers:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers};

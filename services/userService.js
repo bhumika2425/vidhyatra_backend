@@ -83,6 +83,18 @@ const getAllStudents = async () => {
     }
 };
 
+const getAllTeachers = async () => {
+    try {
+        const students = await User.findAll({
+            where: { role: 'Teacher' },  // Only fetch users with role "Student"
+            attributes: { exclude: ['password', 'otp', 'otpExpiry'] }, // Exclude sensitive fields
+        });
+        return students;
+    } catch (error) {
+        console.error(error);
+        throw new Error('Unable to fetch teachers');
+    }
+};
 // const getAllUsers = async (req, res) => {
 //     const { page = 1, limit = 10 } = req.query; // Default to page 1, 10 users per page
 //     const offset = (page - 1) * limit;
@@ -111,5 +123,6 @@ module.exports = {
     registerStudent,
     loginUser,
     getAllUsers,
-    getAllStudents,  // Add the function to exports
+    getAllStudents, 
+    getAllTeachers // Add the function to exports
 };
