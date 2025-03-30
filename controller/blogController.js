@@ -4,30 +4,50 @@ const Profile = require("../models/profileModel");
 const Like = require("../models/like");
 const Comment = require("../models/comment");
 
-
+// Create a new blog
 const createBlog = async (req, res) => {
-  const { blog_description } = req.body;
-  const files = req.files; // Correct reference to uploaded files
-
-  console.log('Uploaded files:', files); // Debugging
-  console.log('Request body:', req.body);
-
-  if (!blog_description) {
-    return res.status(400).json({ message: 'Description are required' });
-  }
-
-  const serverUrl = 'http://10.0.2.2:3001';
-  // Collect URLs of uploaded images
-  const imagePaths = files.map(file => `${serverUrl}/uploads/blog-images/${file.filename}`);
-
   try {
-    const blog = await Blog.create({ blog_description, image_urls: imagePaths, user_id: req.user.user_id });
-    res.status(201).json(blog);
+    console.log('Incoming request body:', req.body); // Log the request body
+    console.log('req.user from middleware:', req.user); // Log the entire req.user object
+
+    const { blog_description } = req.body;
+    const user_id = req.user.user_id; // Use optional chaining to avoid errors if req.user is undefined
+
+    // Check if user_id is available
+    console.log('Extracted user_id:', user_id); // Log the user_id value
+    if (!user_id) {
+      console.log('Authentication failure: No user_id found in req.user');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Check if files were uploaded
+    console.log('req.files:', req.files); // Log the uploaded files
+    if (!req.files || req.files.length === 0) {
+      console.log('No files uploaded in request');
+      return res.status(400).json({ error: 'No images uploaded' });
+    }
+
+    // Get Cloudinary URLs from req.files
+    const image_urls = req.files.map(file => file.path); // 'path' is the Cloudinary URL
+    console.log('Generated image_urls:', image_urls); // Log the Cloudinary URLs
+
+    // Create blog entry in database
+    const newBlog = await Blog.create({
+      blog_description,
+      user_id,
+      image_urls, // Store array of Cloudinary URLs
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    console.log('New blog created:', newBlog.toJSON()); // Log the created blog object
+
+    return res.status(201).json(newBlog);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error creating blog:', error); // Log any errors
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 
 const getBlogs = async (req, res) => {
   try {
@@ -52,7 +72,6 @@ const getBlogs = async (req, res) => {
       ],
     });
     
-
     // Transform the blogs to match the required format
     const formattedBlogs = blogs.map(blog => {
       // Format the createdAt date to a readable string
@@ -103,7 +122,6 @@ const getBlogById = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 
 const updateBlog = async (req, res) => {
   const { blog_id } = req.params;
@@ -171,6 +189,7 @@ const likeBlog = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 const commentOnBlog = async (req, res) => {
   const { blog_id } = req.params;
   const { comment_text } = req.body;
@@ -195,5 +214,13 @@ const commentOnBlog = async (req, res) => {
   }
 };
 
-
-module.exports = { createBlog, getBlogs, updateBlog, deleteBlog , getBlogById , likeBlog, commentOnBlog};
+// Export all functions
+module.exports = {
+  createBlog,
+  getBlogs,
+  updateBlog,
+  deleteBlog,
+  getBlogById,
+  likeBlog,
+  commentOnBlog
+};
