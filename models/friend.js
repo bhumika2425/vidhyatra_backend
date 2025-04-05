@@ -33,7 +33,7 @@ const Friend = sequelizeVidhyatra.define('Friend', {
     },
 }, {
     tableName: 'friends', // Explicitly define table name
-    timestamps: false, // Disable automatic timestamps
+    timestamps: false, // Disable automatic timestamps created at and updaeted at
 });
 
 module.exports = Friend;

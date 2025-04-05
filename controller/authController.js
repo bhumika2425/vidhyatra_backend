@@ -150,6 +150,53 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// controller/authController.js
+const changePassword = async (req, res) => {
+    try {
+      const { currentPassword, newPassword, confirmPassword } = req.body;
+      const user_id = req.user.user_id; // From auth middleware
+  
+      // Validate input
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: "Current password, new password, and confirmation are required" });
+      }
+  
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: "New password and confirmation do not match" });
+      }
+  
+      // Optional: Add password strength validation
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "New password must be at least 8 characters long" });
+      }
+  
+      // Find the user
+      const user = await User.findByPk(user_id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      // Verify current password
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+  
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10); // Simplified hashing
+  
+      // Update the password
+      user.password = hashedPassword;
+      await user.save();
+  
+      return res.status(200).json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+
+  
 const getAllUsers = async (req, res) => {
     const userId = req.user.user_id;  // Extract the user ID from the JWT token
 
@@ -188,4 +235,4 @@ const getTeachers = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers};
+module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword};

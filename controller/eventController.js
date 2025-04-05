@@ -11,6 +11,11 @@ const createEvent = async (req, res) => {
 
         // Ensure event_date only contains YYYY-MM-DD
         const formattedDate = new Date(event_date).toISOString().split('T')[0];
+         // Check if the event date is in the past
+         const today = new Date().toISOString().split('T')[0];
+         if (formattedDate < today) {
+             return res.status(400).json({ message: 'Event date cannot be in the past.' });
+         }
 
         const newEvent = await Event.create({
             title,

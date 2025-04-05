@@ -22,15 +22,15 @@ const createBlog = async (req, res) => {
 
     // Check if files were uploaded
     console.log('req.files:', req.files); // Log the uploaded files
-    if (!req.files || req.files.length === 0) {
-      console.log('No files uploaded in request');
-      return res.status(400).json({ error: 'No images uploaded' });
+    
+    let image_urls = [];
+    if (req.files && req.files.length > 0) {
+      image_urls = req.files.map(file => file.path); // Get Cloudinary URLs
+      console.log('Generated image_urls:', image_urls);
+    } else {
+      console.log('No files uploaded, proceeding without images');
     }
-
-    // Get Cloudinary URLs from req.files
-    const image_urls = req.files.map(file => file.path); // 'path' is the Cloudinary URL
-    console.log('Generated image_urls:', image_urls); // Log the Cloudinary URLs
-
+    
     // Create blog entry in database
     const newBlog = await Blog.create({
       blog_description,

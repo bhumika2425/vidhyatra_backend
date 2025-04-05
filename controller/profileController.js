@@ -2,83 +2,90 @@
 const profileService = require('../services/profileService');
 const Profile = require('../models/profileModel'); // Assuming you have a Profile model
 
-
 const createProfile = async (req, res) => {
   try {
-    console.log("Incoming request body:", req.body); // Log incoming request body
+    console.log("====== Incoming Create Profile Request ======");
+    console.log("Request body:", req.body);
+    console.log("Request file:", req.file);
+    console.log("Authenticated user:", req.user);
 
     const user = req.user;
 
-    console.log("User in request:", user); // Log the user object
-
     // Ensure user is authenticated
     if (!user || !user.user_id) {
-      console.log(req.user)
+      console.warn("⚠️ Unauthorized request: No user in request object");
       return res.status(401).json({ message: 'Unauthorized: No user logged in.' });
     }
 
-    // Initialize profileData with the incoming request body
+    // Prepare profile data
     const profileData = req.body;
+    profileData.user_id = user.user_id;
 
-    // Set user_id to the authenticated user's ID
-    profileData.user_id = req.user.user_id;
+    console.log("📦 Initial profileData:", profileData);
 
-    // Check if a file is uploaded
+    // Attach Cloudinary URL if file exists
     if (req.file) {
-      const serverUrl = 'http://10.0.2.2:3001'; // Replace with your server's base URL
-      profileData.profileImageUrl = `${serverUrl}/uploads/profile-images/${req.file.filename}`; // Store the complete URL
+      profileData.profileImageUrl = req.file.path;
+      console.log("🖼️ Cloudinary URL for profile image:", req.file.path);
     }
 
+    // Final log before DB operation
+    console.log("🚀 Saving profile with data:", profileData);
+
     const newProfile = await profileService.createProfile(profileData);
+
+    console.log("✅ Profile created successfully:", newProfile);
+
     res.status(201).json({
       message: 'Student profile created successfully',
-      data: newProfile
+      data: newProfile,
     });
   } catch (error) {
-    console.error("Error in profile creation:", error.message);
+    console.error("❌ Error in profile creation:", error.message);
     res.status(500).json({
-      message: error.message
+      message: 'Error creating profile',
+      error: error.message,
     });
   }
 };
 
+
 // Check if profile exists for the authenticated user
 const checkProfileExists = async (req, res) => {
-    try {
-        const userId = req.user.user_id; // Extract user ID from req.user set by authentication middleware
-        const profile = await Profile.findOne({ where: { user_id: userId } });
+  try {
+    const userId = req.user.user_id; // Extract user ID from req.user set by authentication middleware
+    const profile = await Profile.findOne({ where: { user_id: userId } });
 
-        if (profile) {
-            return res.status(200).json({ exists: true, profile });
-        } else {
-            return res.status(200).json({ exists: false });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+    if (profile) {
+      return res.status(200).json({ exists: true, profile });
+    } else {
+      return res.status(200).json({ exists: false });
     }
+  } catch (error) {
+    console.error("Error checking profile existence:", error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 };
 
 // Fetch profile data for the authenticated user
 const getProfileData = async (req, res) => {
-    try {
-        const userId = req.user.user_id; // Extract user ID from req.user set by authentication middleware
-        const profile = await Profile.findOne({ where: { user_id: userId } });
+  try {
+    const userId = req.user.user_id; // Extract user ID from req.user set by authentication middleware
+    const profile = await Profile.findOne({ where: { user_id: userId } });
 
-        if (!profile) {
-            return res.status(404).json({ message: 'Profile not found' });
-        }
-
-        res.status(200).json({
-            message: 'Profile fetched successfully',
-            profile
-        });
-    } catch (error) {
-        console.error("Error fetching profile data:", error.message);
-        res.status(500).json({ message: 'Server error', error: error.message });
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found' });
     }
-};
 
+    res.status(200).json({
+      message: 'Profile fetched successfully',
+      profile,
+    });
+  } catch (error) {
+    console.error("Error fetching profile data:", error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const updateProfile = async (req, res) => {
   try {
@@ -87,8 +94,8 @@ const updateProfile = async (req, res) => {
 
     // Update profile image if a new file is uploaded
     if (req.file) {
-      const serverUrl = 'http://10.0.2.2:3001';
-      updatedData.profileImageUrl = `${serverUrl}/uploads/profile-images/${req.file.filename}`;
+      updatedData.profileImageUrl = req.file.path; // Use the Cloudinary URL from req.file.path
+      console.log("Updated Cloudinary URL for profile image:", updatedData.profileImageUrl);
     }
 
     const updatedProfile = await profileService.updateProfile(userId, updatedData);
@@ -102,13 +109,13 @@ const updateProfile = async (req, res) => {
     }
   } catch (error) {
     console.error("Error updating profile:", error.message);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
   }
 };
 
 module.exports = {
-    createProfile,
-    checkProfileExists,
-    getProfileData, // Add the new function here
-    updateProfile,
-  };
+  createProfile,
+  checkProfileExists,
+  getProfileData,
+  updateProfile,
+};
