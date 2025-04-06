@@ -9,6 +9,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const esewaRoutes = require("./routes/esewaRoutes");
 const routineRoutes = require("./routes/routineRoutes"); 
+const deadlineRoutes = require('./routes/deadlineRoutes');
 
 const http = require('http'); // HTTP module for server
 require('dotenv').config();
@@ -34,6 +35,7 @@ app.use('/api/eventCalender', eventRoutes);
 app.use('/api/collegeFees', feeRoutes);
 app.use("/api/payFees", esewaRoutes);
 app.use('/api/routines', routineRoutes); 
+app.use('/api/deadlines', deadlineRoutes);
 
 
 app.get("/", (req, res) => {

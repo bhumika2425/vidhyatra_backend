@@ -74,24 +74,24 @@ const getBlogs = async (req, res) => {
     
     // Transform the blogs to match the required format
     const formattedBlogs = blogs.map(blog => {
-      // Format the createdAt date to a readable string
-      const formattedDate = blog.createdAt.toLocaleString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        hour12: true, // Adjust to 12-hour format (set to false for 24-hour format)
-      });
+      // // Format the createdAt date to a readable string
+      // const formattedDate = blog.createdAt.toLocaleString('en-US', {
+      //   weekday: 'long',
+      //   year: 'numeric',
+      //   month: 'long',
+      //   day: 'numeric',
+      //   hour: 'numeric',
+      //   minute: 'numeric',
+      //   second: 'numeric',
+      //   hour12: true, // Adjust to 12-hour format (set to false for 24-hour format)
+      // });
 
       return {
         blog_id: blog.blog_id,
         blog_description: blog.blog_description,
         image_urls: blog.image_urls, // Parsed automatically by the getter in the model
         user_id: blog.user_id,
-        createdAt: formattedDate, // Use the formatted date here'
+        createdAt: blog.createdAt,
         profileImageUrl: blog.profile ? blog.profile.profileImageUrl : null,
         full_name: blog.profile ? blog.profile.full_name : 'Unknown',
         likes: blog.Likes ? blog.Likes.length : 0, // Count likes
