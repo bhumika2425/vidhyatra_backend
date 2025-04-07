@@ -10,11 +10,12 @@ const {
 } = require('../controller/deadlineController');
 const authenticateUser = require('../middleware/auth');
 
-router.get('/', getAllDeadlines);
+// router.get('/', getAllDeadlines);
 router.get('/:id', getDeadlineById);
 router.post('/', authenticateUser, createDeadline);
 router.put('/:id', updateDeadline);
 router.patch('/:id/complete', markDeadlineCompleted);
 router.delete('/:id', deleteDeadline);
+router.get('/', authenticateUser, getAllDeadlines);
 
 module.exports = router;

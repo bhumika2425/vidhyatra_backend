@@ -35,6 +35,17 @@ const Deadline = sequelizeVidhyatra.define('Deadline', {
     field: 'updatedAt',
     onUpdate: DataTypes.NOW,
   },
+  // 🎓 Updated to ENUM for Year
+  year: {
+    type: DataTypes.ENUM('1st Year', '2nd Year', '3rd Year'),
+    allowNull: true,
+  },
+
+  // 🕒 Updated to ENUM for Semester
+  semester: {
+    type: DataTypes.ENUM('Semester 1', 'Semester 2'),
+    allowNull: true,
+  },
 }, {
   tableName: 'deadlines',
   timestamps: true,
