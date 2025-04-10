@@ -47,7 +47,7 @@ const loginUser = async (identifier, password) => {
     const token = jwt.sign(
         { user_id: user.user_id, role: user.role },
         process.env.JWT_SECRET, // Secret key from your .env file
-        { expiresIn: '1h' } // Set token expiration (optional)
+        { expiresIn: '24h' } // Set token expiration (optional)
     );
 
     const { password: _, ...userData } = user.dataValues;
