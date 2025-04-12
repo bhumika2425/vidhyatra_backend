@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const adminLoginRoutes = require('./routes/adminLoginRoutes');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profile');
 const blogRoutes = require('./routes/blogRoutes');
@@ -10,6 +11,8 @@ const feeRoutes = require('./routes/feeRoutes');
 const esewaRoutes = require("./routes/esewaRoutes");
 const routineRoutes = require("./routes/routineRoutes"); 
 const deadlineRoutes = require('./routes/deadlineRoutes');
+const timeSlotRoutes = require('./routes/timeSlotRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 const http = require('http'); // HTTP module for server
 require('dotenv').config();
@@ -36,7 +39,10 @@ app.use('/api/collegeFees', feeRoutes);
 app.use("/api/payFees", esewaRoutes);
 app.use('/api/routines', routineRoutes); 
 app.use('/api/deadlines', deadlineRoutes);
-
+app.use('/api/adminLoginRoutes', adminLoginRoutes);
+// Routes
+app.use('/api/timeslots', timeSlotRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/test.html");

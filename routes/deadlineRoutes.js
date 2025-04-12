@@ -8,7 +8,7 @@ const {
   markDeadlineCompleted,
   deleteDeadline,
 } = require('../controller/deadlineController');
-const authenticateUser = require('../middleware/auth');
+const { authenticateUser } = require('../middleware/auth');
 
 // router.get('/', getAllDeadlines);
 router.get('/:id', getDeadlineById);

@@ -1,19 +1,20 @@
 const Fee = require("../models/fee");
 const User = require("../models/user");
+const Admin = require("../models/adminModel");
 
 // Add a new fee (Admin only)
 const addFee = async (req, res) => {
   try {
     const { feeType, feeDescription, feeAmount, dueDate } = req.body;
 
-    // Ensure that the authenticated user is an admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ message: "Access denied. Only admins can add fees." });
-    }
+    // // Ensure that the authenticated user is an admin
+    // if (!req.user.isAdmin) {
+    //   return res.status(403).json({ message: "Access denied. Only admins can add fees." });
+    // }
 
     // Create the fee record
     const fee = await Fee.create({ 
-      user_id: req.user.user_id, // Use the college_id from the authenticated user
+      admin_id: req.admin.admin_id, // Use the college_id from the authenticated user
       feeType, 
       feeDescription, 
       feeAmount, 
@@ -47,9 +48,9 @@ const getFees = async (req, res) => {
   
       const fees = await Fee.findAll({
         include: {
-          model: User,
+          model: Admin,
           attributes: ["name", "email"], // Get only name and email from the User model
-          required: true,  // This ensures that only fees with associated users are returned
+          required: false,  // Changed to false to return fees even if admin data is missing
         },
       });
   
@@ -111,7 +112,9 @@ const updateFee = async (req, res) => {
       await fee.update(updatedData);
   
       // Debugging: Log the updated fee after the update operation
-      const updatedFee = await Fee.findByPk(req.params.id);  // Fetch the updated fee from the database
+      const updatedFee = await Fee.findByPk(req.params.id, {
+        include: { model: Admin, attributes: ["name", "email"] },
+      });
       console.log("Updated Fee:", updatedFee);
   
       res.status(200).json({ message: "Fee updated successfully", fee: updatedFee });

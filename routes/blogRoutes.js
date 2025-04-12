@@ -1,7 +1,7 @@
 // routes/blogRoutes.js
 const express = require("express");
 const blogController = require("../controller/blogController");
-const authenticateUser = require("../middleware/auth");
+const { authenticateUser } = require("../middleware/auth");
 const router = express.Router();
 const { blogImageUpload } = require("../config/multerConfig"); // Adjust path if needed
 

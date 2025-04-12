@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelizeVidhyatra } = require('../config/db');  // Adjust the path according to your config file location
-
+const { sequelizeVidhyatra } = require('../config/db');
 
 const User = sequelizeVidhyatra.define('User', {
     user_id: {
@@ -61,7 +60,7 @@ const User = sequelizeVidhyatra.define('User', {
     hooks: {
         beforeSave: (user, options) => {
             if (user.isAdmin) {
-                user.role = 'Admin'; // Automatically set role to 'Admin' if isAdmin is true
+                user.role = 'Admin';
             }
         }
     }
@@ -73,6 +72,3 @@ User.findByCollegeId = async (collegeId) => {
 };
 
 module.exports = User;
-
-
-

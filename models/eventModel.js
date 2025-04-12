@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelizeVidhyatra } = require('../config/db');
 const User = require('./user'); // Assuming your User model is in the same directory
+const Admin = require('./adminModel');
 
 const Event = sequelizeVidhyatra.define('Event', {
     event_id: {
@@ -31,8 +32,8 @@ const Event = sequelizeVidhyatra.define('Event', {
     created_by: {
         type: DataTypes.INTEGER,
         references: {
-            model: User,
-            key: 'user_id',
+            model: Admin,
+            key: 'admin_id',
         },
         allowNull: false,
     },
@@ -52,6 +53,6 @@ const Event = sequelizeVidhyatra.define('Event', {
 
 // Associations
 User.hasMany(Event, { foreignKey: 'created_by', as: 'events' });
-Event.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+Event.belongsTo(Admin, { foreignKey: 'created_by', as: 'creator' });
 
 module.exports = Event;

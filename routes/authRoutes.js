@@ -1,7 +1,7 @@
 // routes/authRoutes.js
 const express = require('express');
 const { registerStudent, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword } = require('../controller/authController');
-const authenticateUser = require('../middleware/auth');
+const { authenticateUser ,authenticateAdmin } = require('../middleware/auth');
 
 
 const router = express.Router();
@@ -16,8 +16,8 @@ router.post('/reset-password', resetPassword);   // Reset password route
 
 // Add a route to get all users
 router.get('/users', authenticateUser, getAllUsers);
-router.get('/students', authenticateUser, getStudents);
-router.get('/teachers', authenticateUser, getTeachers);
+router.get('/students', authenticateAdmin, getStudents);
+router.get('/teachers', authenticateAdmin, getTeachers);
 
 router.post('/change-password', authenticateUser, changePassword);
 module.exports = router;

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user'); // Adjust path to your model
+const Admin = require('../models/adminModel');
 
 const authenticateUser = async (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -41,5 +42,74 @@ const authenticateUser = async (req, res, next) => {
     }
 };
 
-module.exports = authenticateUser;
+const authenticateAdmin = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+  
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(403).json({ message: 'No token provided or invalid format' });
+    }
+  
+    const token = authHeader.split(' ')[1];
+  
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const admin = await Admin.findByPk(decoded.admin_id);
+  
+      if (!admin) {
+        return res.status(404).json({ message: 'Admin not found' });
+      }
+  
+      req.admin = admin;
+      next();
+    } catch (error) {
+      console.error('Token error:', error);
+      return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    }
+  };
+
+  const authenticateUserOrAdmin = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+  
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(403).json({ message: 'No token provided or invalid token format.' });
+    }
+  
+    const token = authHeader.split(' ')[1];
+  
+    try {
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  
+      // Try authenticating as a user first
+      if (decoded.user_id) {
+        const user = await User.findByPk(decoded.user_id);
+        if (!user) {
+          return res.status(404).json({ message: 'User not found.' });
+        }
+        req.user = user;
+        req.isAdmin = false; // Flag to indicate user, not admin
+        console.log('Authenticated as User:', req.user.user_id);
+        return next();
+      }
+  
+      // If no user_id, try authenticating as an admin
+      if (decoded.admin_id) {
+        const admin = await Admin.findByPk(decoded.admin_id);
+        if (!admin) {
+          return res.status(404).json({ message: 'Admin not found.' });
+        }
+        req.admin = admin;
+        req.isAdmin = true; // Flag to indicate admin
+        console.log('Authenticated as Admin:', req.admin.admin_id);
+        return next();
+      }
+  
+      // If neither user_id nor admin_id is in the token
+      return res.status(401).json({ message: 'Invalid token payload.' });
+    } catch (error) {
+      console.error('Token verification error:', error);
+      return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
+    }
+  };
+module.exports = {authenticateUser, authenticateAdmin, authenticateUserOrAdmin};
 
