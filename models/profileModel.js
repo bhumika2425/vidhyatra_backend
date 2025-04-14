@@ -40,6 +40,10 @@ const Profile = sequelizeVidhyatra.define('Profile', {
     type: DataTypes.ENUM('Semester 1', 'Semester 2'),
     allowNull: true,
   },
+  section: {
+    type: DataTypes.ENUM('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7'),
+    allowNull: false,
+  },
   bio: {
     type: DataTypes.TEXT,  // Ensure bio is in the model
   },

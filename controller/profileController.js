@@ -124,7 +124,7 @@ const Profile = require('../models/profileModel'); // Assuming you have a Profil
 
 // Admin: Create a new profile
 const createProfile = async (req, res) => {
-  const { full_name, date_of_birth, location, department, year, semester, bio, interest } = req.body;
+  const { full_name, date_of_birth, location, department, year, semester, section, bio, interest } = req.body;
 
   try {
     console.log('Request Body:', req.body); // Debug log
@@ -144,6 +144,7 @@ const createProfile = async (req, res) => {
       department,
       year,
       semester,
+      section,
       bio: bio || '', // Bio is optional
       interest: interest || '', // Interest is optional
     };
@@ -238,7 +239,7 @@ const getProfileData = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { full_name, date_of_birth, location, department, year, semester, bio, interest } = req.body;
+    const { full_name, date_of_birth, location, department, year, semester, section,  bio, interest } = req.body;
 
     const updatedData = {
       full_name,
@@ -247,6 +248,7 @@ const updateProfile = async (req, res) => {
       department,
       year,
       semester,
+      section,
       bio: bio || '',           // Ensure empty string if not provided
       interest: interest || '', // Ensure empty string if not provided
     };

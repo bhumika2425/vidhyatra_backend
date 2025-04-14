@@ -1,129 +1,406 @@
-const Routine = require('../models/routine');
-const jwt = require('jsonwebtoken');
+// const RoutineConfig = require('../models/routineConfig');
+// const RoutineEntry = require('../models/routineEntry');
+// const Profile = require('../models/profileModel');
 
-// Admin: Post a new routine
-const createRoutine = async (req, res) => {
-  const { day, start_time, end_time, year,semester, section, room, module_name, status } = req.body;
+// exports.getRoutines = async (req, res) => {
+//   try {
+//     const configs = await RoutineConfig.findAll({
+//       attributes: ['config_id', 'faculty', 'year', 'semester', 'section'],
+//     });
+//     res.status(200).json(configs);
+//   } catch (error) {
+//     console.error('Error fetching routines:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+// exports.createRoutine = async (req, res) => {
+//   const { faculty, year, semester, section, routinesByDay } = req.body;
+
+//   try {
+//     // Validate input
+//     if (!faculty || !year || !semester || !section || !routinesByDay) {
+//       return res.status(400).json({ message: 'Missing required fields' });
+//     }
+
+//     // Check if all days have entries
+//     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+//     for (const day of days) {
+//       if (!routinesByDay[day] || routinesByDay[day].length === 0) {
+//         return res.status(400).json({ message: `No entries for ${day}` });
+//       }
+//     }
+
+//     // Create RoutineConfig
+//     const config = await RoutineConfig.create({
+//       faculty,
+//       year,
+//       semester,
+//       section,
+//     });
+
+//     // Create RoutineEntries
+//     const entries = [];
+//     for (const [day, routines] of Object.entries(routinesByDay)) {
+//       for (const routine of routines) {
+//         if (!routine.subject || !routine.teacher || !routine.room || !routine.startTime || !routine.endTime) {
+//           throw new Error('Invalid routine entry data');
+//         }
+//         entries.push({
+//           config_id: config.config_id,
+//           day,
+//           subject: routine.subject,
+//           teacher: routine.teacher,
+//           room: routine.room,
+//           start_time: routine.startTime,
+//           end_time: routine.endTime,
+//         });
+//       }
+//     }
+
+//     await RoutineEntry.bulkCreate(entries);
+
+//     res.status(201).json({ message: 'Routine created successfully' });
+//   } catch (error) {
+//     console.error('Error creating routine:', error);
+//     res.status(400).json({ message: 'Failed to create routine', error: error.message });
+//   }
+// };
+
+// exports.getRoutinesByConfigId = async (req, res) => {
+//   const { configId } = req.params;
+
+//   try {
+//     const config = await RoutineConfig.findOne({
+//       where: { config_id: configId },
+//       attributes: ['config_id', 'faculty', 'year', 'semester', 'section'],
+//     });
+
+//     if (!config) {
+//       return res.status(404).json({ message: 'Routine configuration not found' });
+//     }
+
+//     const entries = await RoutineEntry.findAll({
+//       where: { config_id: configId },
+//       attributes: ['entry_id', 'day', 'subject', 'teacher', 'room', 'start_time', 'end_time'],
+//     });
+
+//     // Organize entries by day for frontend compatibility
+//     const routinesByDay = {
+//       Sunday: [],
+//       Monday: [],
+//       Tuesday: [],
+//       Wednesday: [],
+//       Thursday: [],
+//       Friday: [],
+//     };
+
+//     entries.forEach((entry) => {
+//       routinesByDay[entry.day].push({
+//         subject: entry.subject,
+//         teacher: entry.teacher,
+//         room: entry.room,
+//         startTime: entry.start_time,
+//         endTime: entry.end_time,
+//       });
+//     });
+
+//     res.status(200).json({
+//       config: config,
+//       routinesByDay: routinesByDay,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching routines by config_id:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+// exports.getRoutinesForAuthenticatedUser = async (req, res) => {
+//   try {
+//     // Get user from middleware
+//     const user = req.user;
+//     if (!user) {
+//       return res.status(401).json({ message: 'Unauthorized: No user found' });
+//     }
+
+//     // Fetch profile by user_id
+//     const profile = await Profile.findOne({
+//       where: { user_id: user.user_id },
+//       attributes: ['department', 'year', 'semester', 'section'],
+//     });
+
+//     console.log('Profile data:', profile ? profile.dataValues : null);
+
+//     // Check if profile exists
+//     if (!profile) {
+//       return res.status(400).json({ message: 'Please complete your profile to access routine features' });
+//     }
+
+//     // Check if profile has required fields
+//     if (!profile.department || !profile.year || !profile.semester || !profile.section) {
+//       return res.status(400).json({ message: 'Profile incomplete: Please add department, year, semester, and section' });
+//     }
+
+//     // Find matching RoutineConfig
+//     const config = await RoutineConfig.findOne({
+//       where: {
+//         faculty: profile.department,
+//         year: profile.year,
+//         semester: profile.semester,
+//         section: profile.section,
+//       },
+//       attributes: ['config_id', 'faculty', 'year', 'semester', 'section'],
+//     });
+
+//     console.log('Queried config with:', {
+//       faculty: profile.department,
+//       year: profile.year,
+//       semester: profile.semester,
+//       section: profile.section,
+//     });
+
+//     if (!config) {
+//       return res.status(404).json({ message: 'No routine found for your profile' });
+//     }
+
+//     // Fetch RoutineEntries
+//     const entries = await RoutineEntry.findAll({
+//       where: { config_id: config.config_id },
+//       attributes: ['entry_id', 'day', 'subject', 'teacher', 'room', 'start_time', 'end_time'],
+//     });
+
+//     // Organize entries by day
+//     const routinesByDay = {
+//       Sunday: [],
+//       Monday: [],
+//       Tuesday: [],
+//       Wednesday: [],
+//       Thursday: [],
+//       Friday: [],
+//     };
+
+//     entries.forEach((entry) => {
+//       routinesByDay[entry.day].push({
+//         subject: entry.subject,
+//         teacher: entry.teacher,
+//         room: entry.room,
+//         startTime: entry.start_time,
+//         endTime: entry.end_time,
+//       });
+//     });
+
+//     res.status(200).json({
+//       config: config,
+//       routinesByDay: routesByDay,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching routines for user:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+const RoutineConfig = require('../models/routineConfig');
+const RoutineEntry = require('../models/routineEntry');
+const Profile = require('../models/profileModel');
+
+exports.getRoutines = async (req, res) => {
+  try {
+    const configs = await RoutineConfig.findAll({
+      attributes: ['config_id', 'faculty', 'year', 'semester', 'section'],
+    });
+    res.status(200).json(configs);
+  } catch (error) {
+    console.error('Error fetching routines:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.createRoutine = async (req, res) => {
+  const { faculty, year, semester, section, routinesByDay } = req.body;
 
   try {
-    console.log('Request Body:', req.body); // Debug log
-
-    // Step 1: Verify the JWT token (authentication)
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided. Authentication required.' });
+    // Validate input
+    if (!faculty || !year || !semester || !section || !routinesByDay) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    let user;
-    try {
-      user = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
-      console.log('Decoded JWT Token:', user); // Debug log
-    } catch (error) {
-      return res.status(401).json({ message: 'Invalid token.' });
-    }
-
-    // Step 2: Check if the user is an admin (authorization)
-    if (user.role !== 'Admin') { // Updated to check role
-      return res.status(403).json({ message: 'Only admins can create routines.' });
-    }
-
-    // Step 3: Validate required fields
-    if (!day || !start_time || !end_time || !year || !section || !room || !module_name) {
-      return res.status(400).json({ message: 'All fields are required!' });
-    }
-
-    // Validate day (must be a valid ENUM value)
-    const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    if (!validDays.includes(day)) {
-      return res.status(400).json({ message: `Day must be one of: ${validDays.join(', ')}` });
-    }
-
-    // Validate status (if provided)
-    if (status) {
-      const validStatuses = ['ongoing', 'upcoming'];
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ message: `Status must be one of: ${validStatuses.join(', ')}` });
+    // Check if all days have entries
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    for (const day of days) {
+      if (!routinesByDay[day] || routinesByDay[day].length === 0) {
+        return res.status(400).json({ message: `No entries for ${day}` });
       }
     }
 
-    // Validate time format (HH:mm:ss) and ensure end_time is after start_time
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
-    if (!timeRegex.test(start_time) || !timeRegex.test(end_time)) {
-      return res.status(400).json({ message: 'Start time and end time must be in HH:mm:ss format.' });
-    }
-
-    const start = new Date(`1970-01-01T${start_time}Z`);
-    const end = new Date(`1970-01-01T${end_time}Z`);
-    if (end <= start) {
-      return res.status(400).json({ message: 'End time must be after start time.' });
-    }
-
-    // Check if section already has 2 classes for the day
-    const count = await Routine.count({
-      where: {
-        day,
-        section,
-      },
-    });
-    console.log(`Routine count for day ${day} and section ${section}: ${count}`); // Debug log
-    if (count >= 2) {
-      return res.status(400).json({ message: 'Only 2 classes allowed per section per day.' });
-    }
-
-    const newRoutine = await Routine.create({
-      day,
-      start_time,
-      end_time,
+    // Create RoutineConfig
+    const config = await RoutineConfig.create({
+      faculty,
       year,
       semester,
       section,
-      room,
-      module_name,
-      status: status || 'upcoming',
-      created_by: user.user_id,
     });
-    console.log('Created Routine:', newRoutine); // Debug log
 
-    res.status(201).json({ message: 'Routine created successfully.', routine: newRoutine });
-  } catch (error) {
-    console.error('Error creating routine:', error);
-    res.status(500).json({ message: 'Error creating routine.', error: error.message });
-  }
-};
-
-// Users: Get all routines
-const getAllRoutines = async (req, res) => {
-  try {
-    const routines = await Routine.findAll({
-      order: [['day', 'ASC']],
-    });
-    res.status(200).json(routines);
-  } catch (error) {
-    console.error('Error fetching routines:', error);
-    res.status(500).json({ message: 'Error fetching routines.', error: error.message });
-  }
-};
-
-// Users: Get routines for a specific day
-const getRoutinesByDay = async (req, res) => {
-  const { day } = req.params;
-
-  try {
-    const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    if (!validDays.includes(day)) {
-      return res.status(400).json({ message: `Day must be one of: ${validDays.join(', ')}` });
+    // Create RoutineEntries
+    const entries = [];
+    for (const [day, routines] of Object.entries(routinesByDay)) {
+      for (const routine of routines) {
+        if (!routine.subject || !routine.teacher || !routine.room || !routine.startTime || !routine.endTime) {
+          throw new Error('Invalid routine entry data');
+        }
+        entries.push({
+          config_id: config.config_id,
+          day,
+          subject: routine.subject,
+          teacher: routine.teacher,
+          room: routine.room,
+          start_time: routine.startTime,
+          end_time: routine.endTime,
+        });
+      }
     }
 
-    const routines = await Routine.findAll({ where: { day } });
-    res.status(200).json(routines);
+    await RoutineEntry.bulkCreate(entries);
+
+    res.status(201).json({ message: 'Routine created successfully' });
   } catch (error) {
-    console.error('Error fetching routines:', error);
-    res.status(500).json({ message: 'Error fetching routines for the day.', error: error.message });
+    console.error('Error creating routine:', error);
+    res.status(400).json({ message: 'Failed to create routine', error: error.message });
   }
 };
 
-module.exports = {
-  createRoutine,
-  getAllRoutines,
-  getRoutinesByDay,
+exports.getRoutinesByConfigId = async (req, res) => {
+  const { configId } = req.params;
+
+  try {
+    const config = await RoutineConfig.findOne({
+      where: { config_id: configId },
+      attributes: ['config_id', 'faculty', 'year', 'semester', 'section'],
+    });
+
+    if (!config) {
+      return res.status(404).json({ message: 'Routine configuration not found' });
+    }
+
+    const entries = await RoutineEntry.findAll({
+      where: { config_id: configId },
+      attributes: ['entry_id', 'day', 'subject', 'teacher', 'room', 'start_time', 'end_time'],
+    });
+
+    // Organize entries by day for frontend compatibility
+    const routinesByDay = {
+      Sunday: [],
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+    };
+
+    entries.forEach((entry) => {
+      routinesByDay[entry.day].push({
+        subject: entry.subject,
+        teacher: entry.teacher,
+        room: entry.room,
+        startTime: entry.start_time,
+        endTime: entry.end_time,
+      });
+    });
+
+    res.status(200).json({
+      config: config,
+      routinesByDay: routinesByDay,
+    });
+  } catch (error) {
+    console.error('Error fetching routines by config_id:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getRoutinesForAuthenticatedUser = async (req, res) => {
+  try {
+    console.log('Entering getRoutinesForAuthenticatedUser');
+    // Get user from middleware
+    const user = req.user;
+    if (!user) {
+      console.log('No user found in req.user');
+      return res.status(401).json({ message: 'Unauthorized: No user found' });
+    }
+    console.log('User:', user.user_id);
+
+    // Fetch profile by user_id
+    const profile = await Profile.findOne({
+      where: { user_id: user.user_id },
+      attributes: ['department', 'year', 'semester', 'section'],
+    });
+
+    console.log('Profile data:', profile ? profile.dataValues : null);
+
+    // Check if profile exists
+    if (!profile) {
+      console.log('No profile found for user:', user.user_id);
+      return res.status(400).json({ message: 'Please complete your profile to access routine features' });
+    }
+
+    // Check if profile has required fields
+    if (!profile.department || !profile.year || !profile.semester || !profile.section) {
+      console.log('Incomplete profile:', profile.dataValues);
+      return res.status(400).json({ message: 'Profile incomplete: Please add department, year, semester, and section' });
+    }
+
+    // Find matching RoutineConfig
+    const config = await RoutineConfig.findOne({
+      where: {
+        faculty: profile.department,
+        year: profile.year,
+        semester: profile.semester,
+        section: profile.section,
+      },
+      attributes: ['config_id', 'faculty', 'year', 'semester', 'section'],
+    });
+
+    console.log('Queried config with:', {
+      faculty: profile.department,
+      year: profile.year,
+      semester: profile.semester,
+      section: profile.section,
+    });
+
+    if (!config) {
+      console.log('No RoutineConfig found for profile');
+      return res.status(404).json({ message: 'No routine found for your profile' });
+    }
+
+    // Fetch RoutineEntries
+    const entries = await RoutineEntry.findAll({
+      where: { config_id: config.config_id },
+      attributes: ['entry_id', 'day', 'subject', 'teacher', 'room', 'start_time', 'end_time'],
+    });
+
+    // Organize entries by day
+    const routinesByDay = {
+      Sunday: [],
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+    };
+
+    entries.forEach((entry) => {
+      routinesByDay[entry.day].push({
+        subject: entry.subject,
+        teacher: entry.teacher,
+        room: entry.room,
+        startTime: entry.start_time,
+        endTime: entry.end_time,
+      });
+    });
+
+    res.status(200).json({
+      config: config,
+      routinesByDay: routinesByDay,
+    });
+  } catch (error) {
+    console.error('Error fetching routines for user:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
