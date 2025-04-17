@@ -44,17 +44,17 @@ const getDeadlineById = async (req, res) => {
 };
 
 const createDeadline = async (req, res) => {
-  const { title, course, deadline, year,semester } = req.body;
+  const { title, course, deadline, year, semester } = req.body;
 
   try {
-    // Check if user is admin (requires JWT middleware)
-    if (!req.user || !req.user.isAdmin) {
+    // Check if authenticated entity is an admin
+    if ((!req.isAdmin && !req.user?.isAdmin)) {
       return res.status(403).json({ message: 'Only admins can post deadlines.' });
     }
 
     // Validate required fields
-    if (!title || !course || !deadline|| !year|| !semester) {
-      return res.status(400).json({ message: 'Missing required fields (title, course, deadline).' });
+    if (!title || !course || !deadline || !year || !semester) {
+      return res.status(400).json({ message: 'Missing required fields (title, course, deadline, year, semester).' });
     }
 
     // Ensure deadline only contains YYYY-MM-DD
@@ -65,6 +65,9 @@ const createDeadline = async (req, res) => {
       return res.status(400).json({ message: 'Deadline date cannot be in the past.' });
     }
 
+    // Get the ID of whoever created this (admin or user with admin privileges)
+    const created_by = req.isAdmin ? req.admin.admin_id : req.user.user_id;
+
     // Create the new deadline
     const newDeadline = await Deadline.create({
       title,
@@ -72,7 +75,7 @@ const createDeadline = async (req, res) => {
       year,
       semester,
       deadline: formattedDate,
-      created_by: req.user.user_id, // Link to the admin who created it
+      created_by
     });
 
     res.status(201).json({ message: 'Deadline created successfully.', deadline: newDeadline });

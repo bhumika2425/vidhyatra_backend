@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user'); // Adjust path to your model
 const Admin = require('../models/adminModel');
 
+// Define authenticateUser
 const authenticateUser = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -65,9 +66,9 @@ const authenticateAdmin = async (req, res, next) => {
       console.error('Token error:', error);
       return res.status(401).json({ message: 'Unauthorized: Invalid token' });
     }
-  };
+};
 
-  const authenticateUserOrAdmin = async (req, res, next) => {
+const authenticateUserOrAdmin = async (req, res, next) => {
     const authHeader = req.headers.authorization;
   
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -110,6 +111,6 @@ const authenticateAdmin = async (req, res, next) => {
       console.error('Token verification error:', error);
       return res.status(401).json({ message: 'Unauthorized: Invalid token.' });
     }
-  };
-module.exports = {authenticateUser, authenticateAdmin, authenticateUserOrAdmin};
+};
 
+module.exports = {authenticateUser, authenticateAdmin, authenticateUserOrAdmin};
