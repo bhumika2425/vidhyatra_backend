@@ -1,11 +1,11 @@
 // routes/authRoutes.js
 const express = require('express');
-const { registerStudent, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword } = require('../controller/authController');
+const { registerUser, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword } = require('../controller/authController');
 const { authenticateUser ,authenticateAdmin } = require('../middleware/auth');
 
 
 const router = express.Router();
-router.post('/register', registerStudent);
+router.post('/register', registerUser);
 
 router.post('/login', loginUser); // Add the login route
 

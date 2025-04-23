@@ -5,23 +5,33 @@ const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const { sequelizeIcpStudents } = require('../config/db');
 
-const registerStudent = async (collegeId, name, email, password, role = 'Student') => {
+const registerUser = async (collegeId, name, email, password, role) => {
+    // Validate role
+    if (!['Student', 'Teacher'].includes(role)) {
+        throw new Error('Invalid role. Must be Student or Teacher.');
+    }
+
+    // Determine which table to query based on role
+    const tableName = role === 'Student' ? 'students' : 'teachers';
+    const errorMessage = `${role} ID or email not found in college database.`;
+
+    // Query the appropriate table
     const results = await sequelizeIcpStudents.query(
-        'SELECT * FROM students WHERE college_id = :collegeId AND email = :email',
+        `SELECT * FROM ${tableName} WHERE college_id = :collegeId AND email = :email`,
         {
             replacements: { collegeId, email },
             type: sequelizeIcpStudents.QueryTypes.SELECT,
         }
     );
 
-    if (results[0] === undefined) {
-        throw new Error('Student ID or email not found in college database.');
+    if (results.length === 0) {
+        throw new Error(errorMessage);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await User.create({ college_id: collegeId, name, email, password: hashedPassword, role });
 
-    return { name, email, message: 'Registration successful!' };
+    return { name, email, message: `${role} registration successful!` };
 };
 
 const loginUser = async (identifier, password) => {
@@ -95,32 +105,9 @@ const getAllTeachers = async () => {
         throw new Error('Unable to fetch teachers');
     }
 };
-// const getAllUsers = async (req, res) => {
-//     const { page = 1, limit = 10 } = req.query; // Default to page 1, 10 users per page
-//     const offset = (page - 1) * limit;
-
-//     try {
-//         const { rows: users, count } = await User.findAndCountAll({
-//             offset,
-//             limit: parseInt(limit, 10),
-//             attributes: { exclude: ['password', 'otp', 'otpExpiry'] },
-//         });
-//         res.status(200).json({
-//             message: 'Users retrieved successfully',
-//             data: users,
-//             total: count,
-//             totalPages: Math.ceil(count / limit),
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Server error', error: error.message });
-//     }
-// };
-
-
 
 module.exports = {
-    registerStudent,
+    registerUser,
     loginUser,
     getAllUsers,
     getAllStudents, 

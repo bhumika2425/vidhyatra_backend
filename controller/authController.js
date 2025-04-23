@@ -9,29 +9,30 @@ const crypto = require('crypto'); // To generate a secure OTP
 const {getAllStudents} = require('../services/userService');
 const {getAllTeachers} = require('../services/userService');
 
-const registerStudent = async (req, res) => {
+const registerUser = async (req, res) => {
     const { collegeId, name, email, password, role } = req.body;
 
     try {
-        const result = await UserService.registerStudent(collegeId, name, email, password, role);
+        // Validate role
+        if (!['Student', 'Teacher'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role. Must be Student or Teacher.' });
+        }
 
-        // Include a clear success message
+        const result = await UserService.registerUser(collegeId, name, email, password, role);
+
         res.status(201).json({
-            message: 'Registration successful!',
+            message: `${role} registration successful!`,
             data: {
                 name: result.name,
                 email: result.email,
             },
         });
     } catch (error) {
-        console.error(error); // Log the error to the console
-        if (error.message === 'Student ID or email not found in college database.') {
-            return res.status(400).json({ message: error.message }); // Send specific error message
+        console.error(error);
+        if (error.message.includes('not found in college database')) {
+            return res.status(400).json({ message: error.message });
         }
-        res.status(500).json({ message: 'Server error', error: error.message }); // Return generic error
-        // TODO: already registered wala mesaage baki
-        // TODO: validation garna baki cha register ma
-        //TODO: frontened ma icon haru ko color fherna cha ani euta lai feresi sabai huni wala lekhnii
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
@@ -165,10 +166,10 @@ const changePassword = async (req, res) => {
         return res.status(400).json({ message: "New password and confirmation do not match" });
       }
   
-      // Optional: Add password strength validation
-      if (newPassword.length < 8) {
-        return res.status(400).json({ message: "New password must be at least 8 characters long" });
-      }
+    //   // Optional: Add password strength validation
+    //   if (newPassword.length < 8) {
+    //     return res.status(400).json({ message: "New password must be at least 8 characters long" });
+    //   }
   
       // Find the user
       const user = await User.findByPk(user_id);
@@ -235,4 +236,4 @@ const getTeachers = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-module.exports = { registerStudent, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword};
+module.exports = { registerUser, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword};
