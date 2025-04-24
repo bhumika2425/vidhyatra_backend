@@ -246,7 +246,7 @@ const completePayment = async (req, res) => {
                   100% { transform: scale(1); }
               }
           </style>
-      </head>
+      </head> 
       <body>
           <div class="container">
               <div class="checkmark-container">
@@ -272,4 +272,51 @@ const completePayment = async (req, res) => {
   }
 };
 
-module.exports = { initializePayment, completePayment };
+const getPaymentHistory = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+
+    // Fetch payment history with related Fee details and Payment details
+    const paymentHistory = await PaidFees.findAll({
+      where: { 
+        user_id: userId,
+      },
+      include: [
+        {
+          model: Fee,
+          attributes: ['feeType', 'feeDescription', 'feeAmount', 'dueDate']
+        },
+        {
+          model: Payment,
+          attributes: ['transactionId', 'amount', 'paymentDate', 'status']
+        }
+      ],
+      order: [['createdAt', 'DESC']], // Most recent payments first
+    });
+
+    if (!paymentHistory || paymentHistory.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No payment history found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      paymentHistory
+    });
+  } catch (error) {
+    console.error("Error fetching payment history:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching payment history",
+      error: error.message
+    });
+  }
+};
+
+module.exports = {
+  initializePayment,
+  completePayment,
+  getPaymentHistory
+};

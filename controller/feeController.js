@@ -40,11 +40,7 @@ const addFee = async (req, res) => {
 
 const getFees = async (req, res) => {
     try {
-      // Debugging: Log request body or params (if necessary)
-      console.log("Request Data:", req.body); // Logs the request data (if needed)
-  
-      // Debugging: Log the SQL query being executed
-      console.log("Executing query to fetch fees with associated users...");
+    
   
       const fees = await Fee.findAll({
         include: {
@@ -53,9 +49,6 @@ const getFees = async (req, res) => {
           required: false,  // Changed to false to return fees even if admin data is missing
         },
       });
-  
-      // Debugging: Log the result returned by the query
-      console.log("Fees Retrieved:", fees);
   
       if (fees.length === 0) {
         console.log("No fees found with associated users.");
