@@ -13,7 +13,8 @@ const routineRoutes = require("./routes/routineRoutes");
 const deadlineRoutes = require('./routes/deadlineRoutes');
 const timeSlotRoutes = require('./routes/timeSlotRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
-const academicRoutes = require('./routes/academicRoutes'); 
+const academicRoutes = require('./routes/academicRoutes');
+const lostAndFoundRoutes = require('./routes/lostAndFoundRoutes');
 
 const http = require('http'); // HTTP module for server
 require('dotenv').config();
@@ -44,6 +45,7 @@ app.use('/api/deadlines', deadlineRoutes);
 app.use('/api/adminLoginRoutes', adminLoginRoutes);
 app.use('/api/timeslots', timeSlotRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/lost-and-found', lostAndFoundRoutes);
 
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/test.html");
