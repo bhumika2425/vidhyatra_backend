@@ -135,6 +135,17 @@ const createProfile = async (req, res) => {
       return res.status(401).json({ message: 'Unauthorized: No user logged in.' });
     }
 
+    // Validate full name
+    if (!full_name) {
+      return res.status(400).json({ message: 'Full name cannot be empty.' });
+    }
+
+    // Check if full name contains numbers
+    if (/\d/.test(full_name)) {
+      return res.status(400).json({ 
+        message: 'Full name cannot contain numbers. Please enter alphabets only.' 
+      });
+    }
     // Step 2: Prepare profile data
     const profileData = {
       user_id: user.user_id,

@@ -29,6 +29,9 @@ const registerUser = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        if (error.message.includes('already registered')) {
+            return res.status(409).json({ message: error.message });
+        }
         if (error.message.includes('not found in college database')) {
             return res.status(400).json({ message: error.message });
         }

@@ -1,5 +1,5 @@
 // services/userService.js
-const jwt = require('jsonwebtoken'); // Import JWT
+const jwt = require('jsonwebtoken'); 
 const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
@@ -11,27 +11,79 @@ const registerUser = async (collegeId, name, email, password, role) => {
         throw new Error('Invalid role. Must be Student or Teacher.');
     }
 
-    // Determine which table to query based on role
-    const tableName = role === 'Student' ? 'students' : 'teachers';
-    const errorMessage = `${role} ID or email not found in college database.`;
-
-    // Query the appropriate table
-    const results = await sequelizeIcpStudents.query(
-        `SELECT * FROM ${tableName} WHERE college_id = :collegeId AND email = :email`,
-        {
-            replacements: { collegeId, email },
-            type: sequelizeIcpStudents.QueryTypes.SELECT,
-        }
-    );
-
-    if (results.length === 0) {
-        throw new Error(errorMessage);
+    // Check if email is already registered
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+        const error = new Error('Email already registered. Please use a different email.');
+        error.statusCode = 409;
+        throw error;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await User.create({ college_id: collegeId, name, email, password: hashedPassword, role });
+    // Check if college ID is already registered
+    const existingCollegeId = await User.findOne({ where: { college_id: collegeId } });
+    if (existingCollegeId) {
+        const error = new Error('College ID already registered. Please contact support if this is an error.');
+        error.statusCode = 409;
+        throw error;
+    }
 
-    return { name, email, message: `${role} registration successful!` };
+    try {
+        // First check if the ID exists in students table
+        const studentResults = await sequelizeIcpStudents.query(
+            'SELECT * FROM students WHERE college_id = :collegeId AND email = :email',
+            {
+                replacements: { collegeId, email },
+                type: sequelizeIcpStudents.QueryTypes.SELECT,
+            }
+        );
+
+        // Then check if the ID exists in teachers table
+        const teacherResults = await sequelizeIcpStudents.query(
+            'SELECT * FROM teachers WHERE college_id = :collegeId AND email = :email',
+            {
+                replacements: { collegeId, email },
+                type: sequelizeIcpStudents.QueryTypes.SELECT,
+            }
+        );
+
+        // If ID exists in students table but trying to register as teacher
+        if (studentResults.length > 0 && role === 'Teacher') {
+            const error = new Error('This college ID belongs to a student. You cannot register as a teacher with a student ID.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // If ID exists in teachers table but trying to register as student
+        if (teacherResults.length > 0 && role === 'Student') {
+            const error = new Error('This college ID belongs to a teacher. You cannot register as a student with a teacher ID.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // If ID doesn't exist in the appropriate table
+        if ((role === 'Student' && studentResults.length === 0) || 
+            (role === 'Teacher' && teacherResults.length === 0)) {
+            const error = new Error(`${role} ID or email not found in college database. Please verify your details.`);
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.create({ college_id: collegeId, name, email, password: hashedPassword, role });
+
+        return { 
+            name, 
+            email, 
+            message: `${role} registration successful!`,
+            statusCode: 201
+        };
+    } catch (error) {
+        if (!error.statusCode) {
+            error.statusCode = 500;
+            error.message = 'Server error during registration. Please try again.';
+        }
+        throw error;
+    }
 };
 
 const loginUser = async (identifier, password) => {
