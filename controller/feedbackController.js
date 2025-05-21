@@ -35,13 +35,20 @@ const getAllFeedback = async (req, res) => {
   try {
     const feedbacks = await FeedbackService.getAllFeedback();
 
-    // Hide `user_id` for feedbacks marked as anonymous
+    // Process feedbacks to include username while respecting anonymity
     const sanitizedFeedbacks = feedbacks.map((feedback) => {
-      if (feedback.is_anonymous) {
-        const { user_id, ...rest } = feedback.dataValues;
-        return rest;
+      const feedbackData = feedback.toJSON();
+      if (feedbackData.is_anonymous) {
+        // For anonymous feedback, remove user info
+        delete feedbackData.user_id;
+        delete feedbackData.user;
+        feedbackData.username = 'Anonymous';
+      } else {
+        // For non-anonymous feedback, include username
+        feedbackData.username = feedbackData.user?.name || 'Unknown User';
+        delete feedbackData.user; // Remove the nested user object
       }
-      return feedback;
+      return feedbackData;
     });
 
     return res.status(200).json({ feedbacks: sanitizedFeedbacks });
@@ -52,10 +59,23 @@ const getAllFeedback = async (req, res) => {
 
 // Get Feedback by User (for users to view their feedback)
 const getFeedbackByUser = async (req, res) => {
-  const user_id = req.user.user_id; // Extract user_id from the authenticated user
+  const user_id = req.user.user_id;
   try {
     const feedbacks = await FeedbackService.getFeedbackByUser(user_id);
-    return res.status(200).json({ feedbacks });
+    
+    // Process feedbacks to include username
+    const processedFeedbacks = feedbacks.map((feedback) => {
+      const feedbackData = feedback.toJSON();
+      if (feedbackData.is_anonymous) {
+        feedbackData.username = 'Anonymous';
+      } else {
+        feedbackData.username = feedbackData.user?.name || 'Unknown User';
+      }
+      delete feedbackData.user; // Remove the nested user object
+      return feedbackData;
+    });
+
+    return res.status(200).json({ feedbacks: processedFeedbacks });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to retrieve user feedback', error: error.message });
   }

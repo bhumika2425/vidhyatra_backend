@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelizeVidhyatra } = require('../config/db');
+const User = require('./user');
 
 // Define Feedback Model
 const Feedback = sequelizeVidhyatra.define('Feedback', {
@@ -30,6 +31,12 @@ const Feedback = sequelizeVidhyatra.define('Feedback', {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },
+});
+
+// Define association with User model
+Feedback.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user'
 });
 
 module.exports = Feedback;

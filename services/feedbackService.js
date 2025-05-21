@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const Feedback = require('../models/feedback');
+const User = require('../models/user');
 
 // Utility to hash user_id
 const hashUserId = (userId) => {
@@ -29,7 +30,14 @@ const submitFeedback = async (feedbackData) => {
 // Get All Feedback (for admin use)
 const getAllFeedback = async () => {
   try {
-    const feedbacks = await Feedback.findAll();
+    const feedbacks = await Feedback.findAll({
+      include: [{
+        model: User,
+        attributes: ['name'], // Only include the name field
+        as: 'user'
+      }],
+      order: [['timestamp', 'DESC']] // Most recent first
+    });
     return feedbacks;
   } catch (error) {
     throw new Error('Error while retrieving feedback: ' + error.message);
@@ -39,7 +47,15 @@ const getAllFeedback = async () => {
 // Get Feedback by User ID (for users to see their feedback)
 const getFeedbackByUser = async (userId) => {
   try {
-    const feedbacks = await Feedback.findAll({ where: { user_id: userId } });
+    const feedbacks = await Feedback.findAll({ 
+      where: { user_id: userId },
+      include: [{
+        model: User,
+        attributes: ['name'],
+        as: 'user'
+      }],
+      order: [['timestamp', 'DESC']]
+    });
     return feedbacks;
   } catch (error) {
     throw new Error('Error while retrieving user feedback: ' + error.message);

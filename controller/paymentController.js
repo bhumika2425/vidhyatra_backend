@@ -5,98 +5,198 @@ const Fee = require("../models/fee");
 const PaidFees = require("../models/paidFeesModel");
 const Payment = require("../models/paymentModel");
 
+// ...existing code...
+
 const initializePayment = async (req, res) => {
     try {
-      const { feeID, feeAmount } = req.body;
-      const userId = req.user.user_id; // Get authenticated user ID
+        const { feeID, feeAmount } = req.body;
+        const userId = req.user.user_id;
 
-      console.log("Authenticated User ID:", userId);
-      console.log("Received feeID:", feeID);
-      console.log("Received totalPrice:", feeAmount);
-
-      // Validate fee exists and feeAmount matches
-      const feeData = await Fee.findOne({
-        where: { feeID, feeAmount: Number(feeAmount) },
-        attributes: ['feeAmount', 'feeID'],
-      });
-
-      console.log("Fee Data from DB:", feeData);
-
-      if (!feeData) {
-        return res.status(400).send({
-          success: false,
-          message: "Fee not found or feeAmount mismatch.",
+        // First validate fee exists and amount matches
+        const feeData = await Fee.findOne({
+            where: { feeID, feeAmount: Number(feeAmount) },
+            attributes: ['feeAmount', 'feeID', 'feeType'],
         });
-      }
 
-      console.log("Fee found, checking for existing payment.");
-
-      // Check for existing non-completed payment
-      let paidFeesData = await PaidFees.findOne({
-        where: {
-          feeID,
-          user_id: userId,
-          status: { [Op.ne]: 'completed' } // Not equal to 'completed'
+        if (!feeData) {
+            return res.status(400).json({
+                success: false,
+                message: "Fee not found or feeAmount mismatch."
+            });
         }
-      });
 
-      const paidFeesId = uuidv4();
-
-      if (paidFeesData) {
-        // Update existing record with new paidFeesId
-        console.log("Existing non-completed payment found, updating record.");
-        await PaidFees.update(
-          {
-            paidFeesId,
-            totalPrice: feeAmount,
-            paymentMethod: "esewa",
-            updatedAt: new Date()
-          },
-          {
+        // Check if user has already paid this fee in the current year
+        const currentYear = new Date().getFullYear();
+        const lastPayment = await PaidFees.findOne({
             where: {
-              paidFeesId: paidFeesData.paidFeesId // Update based on the existing paidFeesId
-            }
-          }
-        );
-
-        // Refresh the paidFeesData to reflect the updated values
-        paidFeesData = await PaidFees.findByPk(paidFeesId);
-        console.log("Updated Paid Fees Data:", paidFeesData);
-      } else {
-        // Create new record
-        console.log("No existing payment, creating new record.");
-        paidFeesData = await PaidFees.create({
-          paidFeesId,
-          feeID,
-          paymentMethod: "esewa",
-          totalPrice: feeAmount,
-          user_id: userId,
+                feeID,
+                user_id: userId,
+                status: 'completed',
+                createdAt: {
+                    [Op.and]: [
+                        { [Op.gte]: new Date(currentYear, 0, 1) }, // Start of current year
+                        { [Op.lte]: new Date(currentYear, 11, 31) } // End of current year
+                    ]
+                }
+            },
+            include: [{
+                model: Payment,
+                where: { status: 'success' },
+                required: true
+            }]
         });
-      }
 
-      console.log("Paid Fees Data:", paidFeesData);
+        if (lastPayment) {
+            return res.status(400).json({
+                success: false,
+                message: `This fee has already been paid for the year ${currentYear}. Next payment will be available in ${currentYear + 1}.`
+            });
+        }
 
-      // Initiate payment with eSewa
-      const paymentInitiate = await getEsewaPaymentHash({
-        amount: feeAmount,
-        transaction_uuid: paidFeesData.paidFeesId,
-      });
+        // Check for pending payment attempts (rate limiting)
+        const pendingPayments = await PaidFees.count({
+            where: {
+                feeID,
+                user_id: userId,
+                status: { [Op.ne]: 'completed' },
+                createdAt: {
+                    [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+                }
+            }
+        });
 
-      console.log("Payment Initiated with eSewa:", paymentInitiate);
+        if (pendingPayments >= 3) {
+            return res.status(429).json({
+                success: false,
+                message: "Too many payment attempts. Please try again after 24 hours."
+            });
+        }
 
-      res.json({
-        success: true,
-        payment: paymentInitiate,
-        paidFeesData,
-      });
+        // Continue with payment initialization
+        const paidFeesId = uuidv4();
+        let paidFeesData = await PaidFees.create({
+            paidFeesId,
+            feeID,
+            paymentMethod: "esewa",
+            totalPrice: feeAmount,
+            user_id: userId,
+            paymentYear: currentYear // Add payment year to track yearly payments
+        });
+
+        const paymentInitiate = await getEsewaPaymentHash({
+            amount: feeAmount,
+            transaction_uuid: paidFeesData.paidFeesId,
+        });
+
+        res.json({
+            success: true,
+            payment: paymentInitiate,
+            paidFeesData,
+        });
+
     } catch (error) {
-      console.error("Error during payment initialization:", error);
-      res.status(500).json({
-        success: false,
-        error: error.message,
-      });
+        console.error("Error during payment initialization:", error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 };
+
+// ...existing code...
+
+// const initializePayment = async (req, res) => {
+//     try {
+//       const { feeID, feeAmount } = req.body;
+//       const userId = req.user.user_id; // Get authenticated user ID
+
+//       console.log("Authenticated User ID:", userId);
+//       console.log("Received feeID:", feeID);
+//       console.log("Received totalPrice:", feeAmount);
+
+//       // Validate fee exists and feeAmount matches
+//       const feeData = await Fee.findOne({
+//         where: { feeID, feeAmount: Number(feeAmount) },
+//         attributes: ['feeAmount', 'feeID'],
+//       });
+
+//       console.log("Fee Data from DB:", feeData);
+
+//       if (!feeData) {
+//         return res.status(400).send({
+//           success: false,
+//           message: "Fee not found or feeAmount mismatch.",
+//         });
+//       }
+
+//       console.log("Fee found, checking for existing payment.");
+
+//       // Check for existing non-completed payment
+//       let paidFeesData = await PaidFees.findOne({
+//         where: {
+//           feeID,
+//           user_id: userId,
+//           status: { [Op.ne]: 'completed' } // Not equal to 'completed'
+//         }
+//       });
+
+//       const paidFeesId = uuidv4();
+
+//       if (paidFeesData) {
+//         // Update existing record with new paidFeesId
+//         console.log("Existing non-completed payment found, updating record.");
+//         await PaidFees.update(
+//           {
+//             paidFeesId,
+//             totalPrice: feeAmount,
+//             paymentMethod: "esewa",
+//             updatedAt: new Date()
+//           },
+//           {
+//             where: {
+//               paidFeesId: paidFeesData.paidFeesId // Update based on the existing paidFeesId
+//             }
+//           }
+//         );
+
+//         // Refresh the paidFeesData to reflect the updated values
+//         paidFeesData = await PaidFees.findByPk(paidFeesId);
+//         console.log("Updated Paid Fees Data:", paidFeesData);
+//       } else {
+//         // Create new record
+//         console.log("No existing payment, creating new record.");
+//         paidFeesData = await PaidFees.create({
+//           paidFeesId,
+//           feeID,
+//           paymentMethod: "esewa",
+//           totalPrice: feeAmount,
+//           user_id: userId,
+//         });
+//       }
+
+//       console.log("Paid Fees Data:", paidFeesData);
+
+//       // Initiate payment with eSewa
+//       const paymentInitiate = await getEsewaPaymentHash({
+//         amount: feeAmount,
+//         transaction_uuid: paidFeesData.paidFeesId,
+//       });
+
+//       console.log("Payment Initiated with eSewa:", paymentInitiate);
+
+//       res.json({
+//         success: true,
+//         payment: paymentInitiate,
+//         paidFeesData,
+//       });
+//     } catch (error) {
+//       console.error("Error during payment initialization:", error);
+//       res.status(500).json({
+//         success: false,
+//         error: error.message,
+//       });
+//     }
+// };
 
 const completePayment = async (req, res) => {
   const { data } = req.query;

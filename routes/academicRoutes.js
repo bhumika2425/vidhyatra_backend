@@ -1,11 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const { createExam, getExams, getExamsByDate } = require('../controller/academicController');
-const { authenticateUser, authenticateAdmin, authenticateUserOrAdmin } = require('../middleware/auth');
+const {
+    createEvent,
+    getEvents,
+    getEventById,
+    updateEvent,
+    deleteEvent
+} = require('../controller/academicController');
+const {
+    authenticateAdmin,
+    authenticateUserOrAdmin
+} = require('../middleware/auth');
 
-// Routes
-router.post('/postExams', authenticateAdmin, createExam);          // Admin: Create an exam
-router.get('/getExams', authenticateUserOrAdmin, getExams);       // User: Get all exams
-router.get('/getExamsByDate/:date', authenticateUser, getExamsByDate); // User: Get exams for a specific date
+// Admin routes
+router.post('/events', authenticateAdmin, createEvent);           // Create exam/holiday event
+router.put('/events/:id', authenticateAdmin, updateEvent);        // Update exam/holiday event
+router.delete('/events/:id', authenticateAdmin, deleteEvent);     // Delete exam/holiday event
+
+// User & Admin routes
+router.get('/events', authenticateUserOrAdmin, getEvents);        // Get all events with filters
+router.get('/events/:id', authenticateUserOrAdmin, getEventById); // Get specific event by ID
 
 module.exports = router;

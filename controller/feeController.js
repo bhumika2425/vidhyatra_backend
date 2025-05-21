@@ -42,13 +42,7 @@ const getFees = async (req, res) => {
     try {
     
   
-      const fees = await Fee.findAll({
-        include: {
-          model: Admin,
-          attributes: ["name", "email"], // Get only name and email from the User model
-          required: false,  // Changed to false to return fees even if admin data is missing
-        },
-      });
+      const fees = await Fee.findAll({});
   
       if (fees.length === 0) {
         console.log("No fees found with associated users.");
@@ -78,44 +72,72 @@ const getFeeById = async (req, res) => {
 
 const updateFee = async (req, res) => {
     try {
-      const { feeType, feeDescription, feeAmount, dueDate } = req.body;
-  
-      // Debugging: Log the incoming request body
-      console.log("Request Body:", req.body);
-  
-      // Ensure that the authenticated user is an admin
-      if (!req.user.isAdmin) {
-        return res.status(403).json({ message: "Access denied. Only admins can update fees." });
-      }
-  
-      const fee = await Fee.findByPk(req.params.id);
-      if (!fee) return res.status(404).json({ message: "Fee not found" });
-  
-      // Dynamically build the object to update only the fields that are present in the request body
-      const updatedData = {};
-      if (feeType) updatedData.feeType = feeType;
-      if (feeDescription) updatedData.feeDescription = feeDescription;
-      if (feeAmount) updatedData.feeAmount = feeAmount;
-      if (dueDate) updatedData.dueDate = dueDate;
-  
-      // Debugging: Log the updatedData object before applying the update
-      console.log("Updated Data:", updatedData);
-  
-      // Perform the update operation
-      await fee.update(updatedData);
-  
-      // Debugging: Log the updated fee after the update operation
-      const updatedFee = await Fee.findByPk(req.params.id, {
-        include: { model: Admin, attributes: ["name", "email"] },
-      });
-      console.log("Updated Fee:", updatedFee);
-  
-      res.status(200).json({ message: "Fee updated successfully", fee: updatedFee });
+        const { feeType, feeDescription, feeAmount, dueDate } = req.body;
+
+        // Input validation
+        if (feeAmount && isNaN(feeAmount)) {
+            return res.status(400).json({ message: "Fee amount must be a valid number" });
+        }
+
+        if (dueDate && isNaN(Date.parse(dueDate))) {
+            return res.status(400).json({ message: "Invalid due date format" });
+        }
+
+        // Find the fee and include admin info to verify ownership
+        const fee = await Fee.findByPk(req.params.id, {
+            include: [{ model: Admin, attributes: ["admin_id", "name", "email"] }]
+        });
+
+        if (!fee) {
+            return res.status(404).json({ message: "Fee not found" });
+        }
+
+        // Verify that the fee belongs to the admin making the request
+        if (fee.admin_id !== req.admin.admin_id) {
+            return res.status(403).json({ message: "Access denied. You can only update fees that you created." });
+        }
+
+        // Dynamically build the object to update only the fields that are present in the request body
+        const updatedData = {};
+        if (feeType) updatedData.feeType = feeType.trim();
+        if (feeDescription) updatedData.feeDescription = feeDescription.trim();
+        if (feeAmount) updatedData.feeAmount = parseFloat(feeAmount);
+        if (dueDate) updatedData.dueDate = new Date(dueDate);
+
+        // Check if any data was provided to update
+        if (Object.keys(updatedData).length === 0) {
+            return res.status(400).json({ message: "No valid fields provided for update" });
+        }
+
+        // Perform the update operation
+        await fee.update(updatedData);
+
+        // Get the updated fee with admin details
+        const updatedFee = await Fee.findByPk(req.params.id, {
+            include: { model: Admin, attributes: ["name", "email"] }
+        });
+
+        res.status(200).json({
+            message: "Fee updated successfully",
+            fee: updatedFee
+        });
+
     } catch (error) {
-      // Debugging: Log the error if something goes wrong
-      console.error("Error updating fee:", error);
-  
-      res.status(500).json({ error: error.message });
+        console.error("Error updating fee:", error);
+        
+        // Handle specific error cases
+        if (error.name === "SequelizeValidationError") {
+            return res.status(400).json({
+                message: "Validation error",
+                errors: error.errors.map(e => ({ field: e.path, message: e.message }))
+            });
+        }
+        
+        if (error.name === "SequelizeDatabaseError") {
+            return res.status(400).json({ message: "Invalid data provided for update" });
+        }
+
+        res.status(500).json({ message: "An error occurred while updating the fee" });
     }
   };
   

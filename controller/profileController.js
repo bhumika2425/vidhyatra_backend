@@ -13,7 +13,7 @@
 
 //     // Ensure user is authenticated
 //     if (!user || !user.user_id) {
-//       console.warn("⚠️ Unauthorized request: No user in request object");
+//       console.warn("Unauthorized request: No user in request object");
 //       return res.status(401).json({ message: 'Unauthorized: No user logged in.' });
 //     }
 
@@ -21,27 +21,27 @@
 //     const profileData = req.body;
 //     profileData.user_id = user.user_id;
 
-//     console.log("📦 Initial profileData:", profileData);
+//     console.log("Initial profileData:", profileData);
 
 //     // Attach Cloudinary URL if file exists
 //     if (req.file) {
 //       profileData.profileImageUrl = req.file.path;
-//       console.log("🖼️ Cloudinary URL for profile image:", req.file.path);
+//       console.log("Cloudinary URL for profile image:", req.file.path);
 //     }
 
 //     // Final log before DB operation
-//     console.log("🚀 Saving profile with data:", profileData);
+//     console.log("Saving profile with data:", profileData);
 
 //     const newProfile = await profileService.createProfile(profileData);
 
-//     console.log("✅ Profile created successfully:", newProfile);
+//     console.log("Profile created successfully:", newProfile);
 
 //     res.status(201).json({
 //       message: 'Student profile created successfully',
 //       data: newProfile,
 //     });
 //   } catch (error) {
-//     console.error("❌ Error in profile creation:", error.message);
+//     console.error("Error in profile creation:", error.message);
 //     res.status(500).json({
 //       message: 'Error creating profile',
 //       error: error.message,
@@ -163,7 +163,7 @@ const createProfile = async (req, res) => {
     // Attach profile image URL if file exists
     if (req.file) {
       profileData.profileImageUrl = req.file.path;
-      console.log("🖼️ Cloudinary URL for profile image:", req.file.path);
+      console.log("Cloudinary URL for profile image:", req.file.path);
     }
 
     // Step 3: Save profile data

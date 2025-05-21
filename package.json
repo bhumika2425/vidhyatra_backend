@@ -4,7 +4,9 @@
   "description": "final year project",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "author": "bhumika k.c.",
   "license": "ISC",
@@ -21,5 +23,11 @@
     "nodemailer": "^6.9.16",
     "sequelize": "^6.37.4",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "sequelize-cli": "^6.6.3",
+    "supertest": "^7.1.1"
   }
 }

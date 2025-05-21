@@ -30,6 +30,14 @@ const PaidFees = sequelizeVidhyatra.define('PaidFees', {
     type: DataTypes.INTEGER,
     allowNull: false, // user_id is required
   },
+  paymentYear: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            min: 2020,
+            max: 2100
+        }
+    }
 }, {
   timestamps: true, // Automatically adds createdAt and updatedAt fields
   tableName: 'paid_fees'

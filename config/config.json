@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "process.env.VIDHYATRA_DB_USER",
+    "password": "process.env.VIDHYATRA_DB_PASSWORD",
+    "database": "process.env.VIDHYATRA_DB_NAME",
+    "host": "process.env.DB_HOST",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "process.env.VIDHYATRA_DB_USER",
+    "password": "process.env.VIDHYATRA_DB_PASSWORD",
+    "database": "process.env.VIDHYATRA_DB_NAME_TEST",
+    "host": "process.env.DB_HOST",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "process.env.VIDHYATRA_DB_USER",
+    "password": "process.env.VIDHYATRA_DB_PASSWORD",
+    "database": "process.env.VIDHYATRA_DB_NAME",
+    "host": "process.env.DB_HOST",
+    "dialect": "mysql"
+  }
+}
