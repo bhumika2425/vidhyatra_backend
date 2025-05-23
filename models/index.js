@@ -6,6 +6,8 @@ const Appointment = require('./appointment');
 User.hasMany(TimeSlot, { foreignKey: 'teacher_id', as: 'timeSlots' });
 TimeSlot.belongsTo(User, { foreignKey: 'teacher_id', as: 'teacher' });
 
+// Appointment associations
+TimeSlot.hasOne(Appointment, { foreignKey: 'slot_id', as: 'appointment' });
 Appointment.belongsTo(TimeSlot, { foreignKey: 'slot_id', as: 'timeSlot' });
 Appointment.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 

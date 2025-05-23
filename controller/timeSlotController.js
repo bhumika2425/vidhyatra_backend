@@ -1,4 +1,4 @@
-const { TimeSlot, User } = require('../models');
+const { TimeSlot, User, Appointment } = require('../models');
 const { Op } = require('sequelize');
 const { sequelizeVidhyatra } = require('../config/db');
 
@@ -101,12 +101,14 @@ const createTimeSlot = async (req, res) => {
 const getTeacherTimeSlots = async (req, res) => {
   try {
     const teacher_id = req.user.user_id;
+    const currentDate = new Date().toISOString().split('T')[0];
+    const currentTime = new Date().toTimeString().slice(0, 8);
 
     // Optional date filter
     const { date } = req.query;
     const whereClause = { teacher_id };
 
-    if (date) {
+   if (date) {
       whereClause.date = date;
     }
 
@@ -119,10 +121,38 @@ const getTeacherTimeSlots = async (req, res) => {
           as: 'teacher',
           attributes: ['user_id', 'name', 'email'],
         },
-      ],
+        {
+          model: Appointment,
+          as: 'appointment',
+          required: false,
+          include: [
+            {
+              model: User,
+              as: 'student',
+              attributes: ['user_id', 'name', 'email']
+            }
+          ]
+        }
+      ]
     });
 
-    res.status(200).json(timeSlots);
+    // Format the response to include student info for booked slots
+    const formattedTimeSlots = timeSlots.map(slot => {
+      const plainSlot = slot.get({ plain: true });
+      if (plainSlot.is_booked && plainSlot.appointment?.student) {
+        return {
+          ...plainSlot,
+          student: plainSlot.appointment.student,
+          appointment: undefined // Remove nested appointment data
+        };
+      }
+      return {
+        ...plainSlot,
+        appointment: undefined // Remove appointment data from response
+      };
+    });
+
+    res.status(200).json(formattedTimeSlots);
   } catch (error) {
     console.error('Error fetching time slots:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });
@@ -133,6 +163,8 @@ const getTeacherTimeSlots = async (req, res) => {
 const getAvailableTimeSlots = async (req, res) => {
   try {
     const { teacher_id, date } = req.query;
+    const currentDate = new Date().toISOString().split('T')[0];
+    const currentTime = new Date().toTimeString().slice(0, 8);
 
     if (!teacher_id) {
       return res.status(400).json({ message: 'Teacher ID is required' });
@@ -144,9 +176,35 @@ const getAvailableTimeSlots = async (req, res) => {
     };
 
     if (date) {
+      // If specific date is requested, only show future time slots for that date
+      if (date < currentDate) {
+        return res.status(200).json([]); // Return empty array for past dates
+      }
       whereClause.date = date;
+      if (date === currentDate) {
+        whereClause.start_time = { [Op.gt]: currentTime };
+      }
     } else {
-      whereClause.date = { [Op.gte]: new Date().toISOString().split('T')[0] };
+      // If no date specified, show all future available time slots
+      whereClause[Op.or] = [
+        {
+          date: {
+            [Op.gt]: currentDate
+          }
+        },
+        {
+          [Op.and]: [
+            {
+              date: currentDate
+            },
+            {
+              start_time: {
+                [Op.gt]: currentTime
+              }
+            }
+          ]
+        }
+      ];
     }
 
     const timeSlots = await TimeSlot.findAll({
