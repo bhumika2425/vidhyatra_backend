@@ -33,6 +33,11 @@ const bookAppointment = async (req, res) => {
       return res.status(400).json({ message: 'Cannot book a time slot in the past' });
     }
     
+    if (!reason || reason.trim().length === 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Please provide a reason for the appointment' });
+    }
+    
     const appointment = await Appointment.create({
       slot_id,
       student_id,
