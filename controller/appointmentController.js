@@ -27,26 +27,27 @@ const bookAppointment = async (req, res) => {
       return res.status(400).json({ message: 'This time slot is already booked' });
     }
     
-    const slotDate = new Date(`${timeSlot.date}T${timeSlot.start_time}`);
+    const slotDate = new Date(`${timeSlot.date}T${timeSlot.start_time}`); //Converts date and time into a JS Date object and ensures it's in the future
     if (slotDate < new Date()) {
       await transaction.rollback();
       return res.status(400).json({ message: 'Cannot book a time slot in the past' });
     }
-    
+
     if (!reason || reason.trim().length === 0) {
       await transaction.rollback();
       return res.status(400).json({ message: 'Please provide a reason for the appointment' });
-    }
+    } //Ensures that a valid reason is provided by the student.
     
     const appointment = await Appointment.create({
       slot_id,
       student_id,
       reason,
       status: 'confirmed'
-    }, { transaction });
+    }, { transaction }); //Creates the new Appointment in the database with status set to 'confirmed'
     
     await timeSlot.update({ is_booked: true }, { transaction });
-    
+    //Marks the time slot as booked after creating the appointment.
+
     await transaction.commit();
     
     const completeAppointment = await Appointment.findByPk(appointment.appointment_id, {
@@ -82,6 +83,7 @@ const bookAppointment = async (req, res) => {
 const getStudentAppointments = async (req, res) => {
   try {
     const student_id = req.user.user_id;
+    //Retrieves the logged-in student's ID
     
     const appointments = await Appointment.findAll({
       where: { student_id },
