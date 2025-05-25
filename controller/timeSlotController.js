@@ -1,8 +1,8 @@
 const { TimeSlot, User, Appointment } = require('../models');
 const { Op } = require('sequelize');
-const { sequelizeVidhyatra } = require('../config/db');
+const { sequelizeVidhyatra } = require('../config/db'); //Imports the Sequelize instance for transaction management
 
-// Helper function to count slots for a specific date and teacher
+//Counts how many slots a specific teacher has created on a given date.
 const countSlotsForDate = async (teacherId, date) => {
   return await TimeSlot.count({
     where: {

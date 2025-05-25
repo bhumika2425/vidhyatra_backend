@@ -122,9 +122,31 @@ const deleteDeadline = async (req, res) => {
   }
 };
 
+const getAllDeadlinesAdmin = async (req, res) => {
+  try {
+    // Only admin should access this route (additional check)
+    if (!req.isAdmin) {
+      return res.status(403).json({ message: 'Access denied. Only admins can view all deadlines.' });
+    }
+
+    // Fetch all deadlines without any filters
+    const deadlines = await Deadline.findAll({
+      order: [
+        ['deadline', 'ASC'], // Order by deadline date ascending
+        ['createdAt', 'DESC'] // Then by creation date descending
+      ]
+    });
+
+    res.status(200).json(deadlines);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching deadlines.', error: error.message });
+  }
+};
+
 // Export controller functions (assuming authentication middleware will be added later)
 module.exports = {
   getAllDeadlines,
+  getAllDeadlinesAdmin,
   getDeadlineById,
   createDeadline,
   updateDeadline,
