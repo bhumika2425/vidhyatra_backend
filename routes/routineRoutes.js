@@ -24,5 +24,6 @@ router.get('/', routineController.getRoutines);
 router.get('/my-routine', authenticateUser, routineController.getRoutinesForAuthenticatedUser);
 router.get('/:configId', routineController.getRoutinesByConfigId);
 router.post('/', routineController.createRoutine);
+router.put('/:configId', routineController.updateRoutine);
 
 module.exports = router;

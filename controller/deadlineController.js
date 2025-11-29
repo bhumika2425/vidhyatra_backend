@@ -1,7 +1,8 @@
 const Deadline = require('../models/deadlineModel');
 
-
-const Profile  = require('../models/profileModel');   // Assuming this is the path to your Profile model
+const notificationService = require('../services/notificationService');
+const Profile = require('../models/profileModel');
+const { Op } = require('sequelize');
 
 const getAllDeadlines = async (req, res) => {
   try {
@@ -43,45 +44,101 @@ const getDeadlineById = async (req, res) => {
   }
 };
 
+
+
 const createDeadline = async (req, res) => {
-  const { title, course, deadline, year, semester } = req.body;
+    try {
+        const { title, course, year, semester, deadline: deadlineDate } = req.body;
+        
+        // Validation...
+        if (!title || !course || !deadlineDate || !year || !semester) {
+            return res.status(400).json({ 
+                message: 'Missing required fields (title, course, deadline, year, semester).' 
+            });
+        }
 
-  try {
-    // Check if authenticated entity is an admin
-    if ((!req.isAdmin && !req.user?.isAdmin)) {
-      return res.status(403).json({ message: 'Only admins can post deadlines.' });
+        const deadline_date = new Date(deadlineDate);
+        if (deadline_date < new Date()) {
+            return res.status(400).json({ 
+                message: 'Deadline date cannot be in the past.' 
+            });
+        }
+
+        const isAdmin = req.isAdmin || req.user?.isAdmin || req.admin;
+        if (!isAdmin) {
+            return res.status(403).json({ 
+                message: 'Only admins can post deadlines.' 
+            });
+        }
+
+        const created_by = req.admin?.admin_id || req.user?.user_id;
+
+        // Create deadline
+        const deadline = await Deadline.create({
+            title,
+            course,
+            year,
+            semester,
+            deadline: deadline_date,
+            created_by: created_by,
+        });
+
+        console.log('✅ Deadline created:', deadline.id);
+
+        // 🎯 NEW: Send notifications to affected students
+        try {
+            // Find all students matching the year and semester
+            const profiles = await Profile.findAll({
+                where: {
+                    year: year,
+                    semester: semester
+                },
+                attributes: ['user_id', 'full_name']
+            });
+
+            console.log(`📢 Found ${profiles.length} students for ${year} ${semester}`);
+
+            if (profiles.length > 0) {
+                const userIds = profiles.map(profile => profile.user_id);
+                
+                // Prepare notification data
+                const notificationData = {
+                    title: 'New Deadline Added',
+                    message: `${title} for ${course} is due on ${deadline_date.toLocaleDateString()}`,
+                    type: 'DEADLINE_ALERT',
+                    priority: 'HIGH',
+                    data: {
+                        deadline_id: deadline.id,
+                        course: course,
+                        deadline_date: deadline_date.toISOString(),
+                        year: year,
+                        semester: semester
+                    }
+                };
+
+                // Send notifications to all affected students
+                await notificationService.sendToMultipleUsers(userIds, notificationData);
+                
+                console.log(`✅ Notifications sent to ${userIds.length} students`);
+            } else {
+                console.log('⚠️ No students found for this year/semester');
+            }
+        } catch (notificationError) {
+            // Log error but don't fail the deadline creation
+            console.error('❌ Error sending notifications:', notificationError);
+        }
+
+        res.status(201).json({
+            message: 'Deadline created successfully.',
+            deadline,
+        });
+    } catch (error) {
+        console.error('Error creating deadline:', error);
+        res.status(500).json({ 
+            message: 'Error creating deadline.', 
+            error: error.message 
+        });
     }
-
-    // Validate required fields
-    if (!title || !course || !deadline || !year || !semester) {
-      return res.status(400).json({ message: 'Missing required fields (title, course, deadline, year, semester).' });
-    }
-
-    // Ensure deadline only contains YYYY-MM-DD
-    const formattedDate = new Date(deadline).toISOString().split('T')[0];
-    // Check if the deadline date is in the past
-    const today = new Date().toISOString().split('T')[0];
-    if (formattedDate < today) {
-      return res.status(400).json({ message: 'Deadline date cannot be in the past.' });
-    }
-
-    // Get the ID of whoever created this (admin or user with admin privileges)
-    const created_by = req.isAdmin ? req.admin.admin_id : req.user.user_id;
-
-    // Create the new deadline
-    const newDeadline = await Deadline.create({
-      title,
-      course,
-      year,
-      semester,
-      deadline: formattedDate,
-      created_by
-    });
-
-    res.status(201).json({ message: 'Deadline created successfully.', deadline: newDeadline });
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating deadline.', error: error.message });
-  }
 };
 
 const updateDeadline = async (req, res) => {
@@ -124,11 +181,20 @@ const deleteDeadline = async (req, res) => {
 
 const getAllDeadlinesAdmin = async (req, res) => {
   try {
+    // Debug logging
+    console.log('=== GET ALL DEADLINES ADMIN ===');
+    console.log('req.isAdmin:', req.isAdmin);
+    console.log('req.user:', req.user ? { user_id: req.user.user_id, isAdmin: req.user.isAdmin } : 'undefined');
+    console.log('req.admin:', req.admin);
+    
     // Only admin should access this route (additional check)
     if (!req.isAdmin) {
+      console.log('❌ Access denied - req.isAdmin is false');
       return res.status(403).json({ message: 'Access denied. Only admins can view all deadlines.' });
     }
 
+    console.log('✅ Admin check passed');
+    
     // Fetch all deadlines without any filters
     const deadlines = await Deadline.findAll({
       order: [
@@ -137,8 +203,10 @@ const getAllDeadlinesAdmin = async (req, res) => {
       ]
     });
 
+    console.log(`📋 Fetched ${deadlines.length} deadlines`);
     res.status(200).json(deadlines);
   } catch (error) {
+    console.error('❌ Error in getAllDeadlinesAdmin:', error);
     res.status(500).json({ message: 'Error fetching deadlines.', error: error.message });
   }
 };

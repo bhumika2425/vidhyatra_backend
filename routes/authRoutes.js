@@ -1,6 +1,6 @@
 // routes/authRoutes.js
 const express = require('express');
-const { registerUser, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword } = require('../controller/authController');
+const { registerUser, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword, updateFCMToken, removeFCMToken, checkFCMTokens } = require('../controller/authController');
 const { authenticateUser ,authenticateAdmin } = require('../middleware/auth');
 
 
@@ -20,4 +20,10 @@ router.get('/students', authenticateAdmin, getStudents);
 router.get('/teachers', authenticateAdmin, getTeachers);
 
 router.post('/change-password', authenticateUser, changePassword);
+
+// FCM Token management
+router.post('/fcm-token', authenticateUser, updateFCMToken);
+router.delete('/fcm-token', authenticateUser, removeFCMToken);
+router.get('/check-fcm-tokens', checkFCMTokens); // For testing purposes
+
 module.exports = router;

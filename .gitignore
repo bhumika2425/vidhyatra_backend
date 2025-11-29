@@ -1,3 +1,7 @@
 node_modules/
-
 uploads/
+.env
+
+# Firebase Service Account (NEVER commit this!)
+config/vidhyatra-firebase-adminsdk.json
+config/*-adminsdk-*.json

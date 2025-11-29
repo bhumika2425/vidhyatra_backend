@@ -1,6 +1,8 @@
 const RoutineConfig = require('../models/routineConfig');
 const RoutineEntry = require('../models/routineEntry');
 const Profile = require('../models/profileModel');
+const User = require('../models/user');
+const notificationService = require('../services/notificationService');
 
 exports.getRoutines = async (req, res) => {
   try {
@@ -60,6 +62,54 @@ exports.createRoutine = async (req, res) => {
 
     await RoutineEntry.bulkCreate(entries);
 
+    console.log('✅ Routine created for:', { faculty, year, semester, section });
+
+    // 🎯 Send notifications to affected students
+    try {
+      // Find all students matching the faculty, year, semester, and section
+      const profiles = await Profile.findAll({
+        where: {
+          department: faculty,
+          year: year,
+          semester: semester,
+          section: section
+        },
+        attributes: ['user_id', 'full_name']
+      });
+
+      console.log(`📢 Found ${profiles.length} students for ${faculty} ${year} ${semester} ${section}`);
+
+      if (profiles.length > 0) {
+        const userIds = profiles.map(profile => profile.user_id);
+        
+        // Prepare notification data
+        const notificationData = {
+          title: '📅 New Class Schedule Available',
+          message: `Your class routine for ${semester} has been published. Check it out now!`,
+          type: 'ACADEMIC_UPDATE',
+          priority: 'HIGH',
+          data: {
+            config_id: config.config_id,
+            faculty: faculty,
+            year: year,
+            semester: semester,
+            section: section,
+            message: 'New routine has been created for your class'
+          }
+        };
+
+        // Send notifications to all affected students
+        await notificationService.sendToMultipleUsers(userIds, notificationData);
+        
+        console.log(`✅ Notifications sent to ${userIds.length} students`);
+      } else {
+        console.log('⚠️ No students found for this routine configuration');
+      }
+    } catch (notificationError) {
+      // Log error but don't fail the routine creation
+      console.error('❌ Error sending notifications:', notificationError);
+    }
+
     res.status(201).json({ message: 'Routine created successfully' });
   } catch (error) {
     console.error('Error creating routine:', error);
@@ -110,8 +160,116 @@ exports.getRoutinesByConfigId = async (req, res) => {
       routinesByDay: routinesByDay,
     });
   } catch (error) {
-    console.error('Error fetching routines by config_id:', error);
+    console.error('Error fetching routines for user:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateRoutine = async (req, res) => {
+  const { configId } = req.params;
+  const { faculty, year, semester, section, routinesByDay } = req.body;
+
+  try {
+    // Validate input
+    if (!faculty || !year || !semester || !section || !routinesByDay) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Find the existing config
+    const config = await RoutineConfig.findOne({
+      where: { config_id: configId },
+    });
+
+    if (!config) {
+      return res.status(404).json({ message: 'Routine configuration not found' });
+    }
+
+    // Update the config
+    await config.update({
+      faculty,
+      year,
+      semester,
+      section,
+    });
+
+    // Delete existing entries for this config
+    await RoutineEntry.destroy({
+      where: { config_id: configId },
+    });
+
+    // Create new entries
+    const entries = [];
+    for (const [day, routines] of Object.entries(routinesByDay)) {
+      for (const routine of routines) {
+        if (!routine.subject || !routine.teacher || !routine.room || !routine.startTime || !routine.endTime) {
+          throw new Error('Invalid routine entry data');
+        }
+        entries.push({
+          config_id: configId,
+          day,
+          subject: routine.subject,
+          teacher: routine.teacher,
+          room: routine.room,
+          start_time: routine.startTime,
+          end_time: routine.endTime,
+        });
+      }
+    }
+
+    await RoutineEntry.bulkCreate(entries);
+
+    console.log('✅ Routine updated for:', { faculty, year, semester, section });
+
+    // 🎯 Send notifications to affected students
+    try {
+      // Find all students matching the faculty, year, semester, and section
+      const profiles = await Profile.findAll({
+        where: {
+          department: faculty,
+          year: year,
+          semester: semester,
+          section: section
+        },
+        attributes: ['user_id', 'full_name']
+      });
+
+      console.log(`📢 Found ${profiles.length} students for ${faculty} ${year} ${semester} ${section}`);
+
+      if (profiles.length > 0) {
+        const userIds = profiles.map(profile => profile.user_id);
+        
+        // Prepare notification data
+        const notificationData = {
+          title: '🔄 Class Schedule Updated',
+          message: `Your class routine for ${semester} has been updated. Check the new schedule now!`,
+          type: 'ACADEMIC_UPDATE',
+          priority: 'HIGH',
+          data: {
+            config_id: configId,
+            faculty: faculty,
+            year: year,
+            semester: semester,
+            section: section,
+            message: 'Class routine has been updated'
+          }
+        };
+
+        // Send notifications to all affected students
+        await notificationService.sendToMultipleUsers(userIds, notificationData);
+        
+        console.log(`✅ Update notifications sent to ${userIds.length} students`);
+      } else {
+        console.log('⚠️ No students found for this routine configuration');
+      }
+    } catch (notificationError) {
+      // Log error but don't fail the routine update
+      console.error('❌ Error sending notifications:', notificationError);
+    }
+
+    res.status(200).json({ message: 'Routine updated successfully' });
+  } catch (error) {
+    console.error('Error updating routine:', error);
+    res.status(400).json({ message: 'Failed to update routine', error: error.message });
   }
 };
 
@@ -126,7 +284,7 @@ exports.getRoutinesForAuthenticatedUser = async (req, res) => {
     }
     console.log('User:', user.user_id);
 
-    // Fetch profile by user_id
+    // Fetch profile by user_id (profile is automatically created on enrollment)
     const profile = await Profile.findOne({
       where: { user_id: user.user_id },
       attributes: ['department', 'year', 'semester', 'section'],
@@ -134,16 +292,21 @@ exports.getRoutinesForAuthenticatedUser = async (req, res) => {
 
     console.log('Profile data:', profile ? profile.dataValues : null);
 
-    // Check if profile exists
-    if (!profile) {
-      console.log('No profile found for user:', user.user_id);
-      return res.status(400).json({ message: 'Please complete your profile to access routine features' });
-    }
-
-    // Check if profile has required fields
-    if (!profile.department || !profile.year || !profile.semester || !profile.section) {
-      console.log('Incomplete profile:', profile.dataValues);
-      return res.status(400).json({ message: 'Profile incomplete: Please add department, year, semester, and section' });
+    // If profile doesn't have required fields, return friendly message
+    if (!profile || !profile.department || !profile.year || !profile.semester || !profile.section) {
+      console.log('Profile incomplete or missing for user:', user.user_id);
+      return res.status(200).json({ 
+        message: 'Your routine is not available yet. Please be patient, we will notify you once your class schedule is ready!',
+        routinesByDay: {
+          Sunday: [],
+          Monday: [],
+          Tuesday: [],
+          Wednesday: [],
+          Thursday: [],
+          Friday: [],
+          Saturday: []
+        }
+      });
     }
 
     // Find matching RoutineConfig
@@ -166,7 +329,18 @@ exports.getRoutinesForAuthenticatedUser = async (req, res) => {
 
     if (!config) {
       console.log('No RoutineConfig found for profile');
-      return res.status(404).json({ message: 'No routine found for your profile' });
+      return res.status(200).json({ 
+        message: 'Your routine is not created yet. Please be patient, we will let you know very soon!',
+        routinesByDay: {
+          Sunday: [],
+          Monday: [],
+          Tuesday: [],
+          Wednesday: [],
+          Thursday: [],
+          Friday: [],
+          Saturday: []
+        }
+      });
     }
 
     // Fetch RoutineEntries
@@ -183,6 +357,7 @@ exports.getRoutinesForAuthenticatedUser = async (req, res) => {
       Wednesday: [],
       Thursday: [],
       Friday: [],
+      Saturday: []
     };
 
     entries.forEach((entry) => {

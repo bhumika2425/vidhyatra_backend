@@ -5,7 +5,7 @@ const User = require('./user');
 // Define Feedback Model
 const Feedback = sequelizeVidhyatra.define('Feedback', {
   user_id: {
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   feedback_type: {

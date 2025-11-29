@@ -35,6 +35,11 @@ const User = sequelizeVidhyatra.define('User', {
         defaultValue: false,
         allowNull: false,
     },
+    fcmToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        field: 'fcm_token',
+    },
     otp: {
         type: DataTypes.STRING,
         allowNull: true,

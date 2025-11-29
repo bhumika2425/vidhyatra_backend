@@ -10,23 +10,20 @@ const {getAllStudents} = require('../services/userService');
 const {getAllTeachers} = require('../services/userService');
 
 const registerUser = async (req, res) => {
-    const { collegeId, name, email, password, role } = req.body;
+    const { collegeId, email, password, confirm_password } = req.body;
 
     try {
-        // Validate role
-        if (!['Student', 'Teacher'].includes(role)) {
-            return res.status(400).json({ message: 'Invalid role. Must be Student or Teacher.' });
+        // Validate required fields (role is auto-determined)
+        if (!collegeId || !email || !password || !confirm_password) {
+            return res.status(400).json({ 
+                message: 'All fields are required: collegeId, email, password, confirm_password' 
+            });
         }
 
-        const result = await UserService.registerUser(collegeId, name, email, password, role);
+        // Auto-determine role based on college database lookup
+        const result = await UserService.registerUser(collegeId, email, password, confirm_password);
 
-        res.status(201).json({
-            message: `${role} registration successful!`,
-            data: {
-                name: result.name,
-                email: result.email,
-            },
-        });
+        res.status(201).json(result);
     } catch (error) {
         console.error(error);
         if (error.message.includes('already registered')) {
@@ -44,11 +41,20 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { identifier, password } = req.body;
 
+    console.log('🔐 Login attempt:');
+    console.log('   Identifier:', identifier);
+    console.log('   Password length:', password ? password.length : 0);
+    console.log('   Request body:', JSON.stringify(req.body, null, 2));
+
     try {
         const result = await UserService.loginUser(identifier, password);
+        console.log('✅ Login successful for:', identifier);
+        console.log('   User ID:', result.user?.user_id);
+        console.log('   Is Admin:', result.user?.isAdmin);
         res.status(200).json(result); // Send the token and user data in the response
     } catch (error) {
-        console.error(error);
+        console.error('❌ Login error:', error.message);
+        console.error('   Full error:', error);
         if (error.message === 'Invalid credentials.') {
             return res.status(401).json({ message: error.message });
         }
@@ -239,4 +245,124 @@ const getTeachers = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-module.exports = { registerUser, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword};
+
+// Update FCM Token
+const updateFCMToken = async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+        const userId = req.user.user_id;
+
+        console.log(`📱 Updating FCM token for user ${userId}`);
+
+        if (!fcmToken || fcmToken.trim() === '') {
+            return res.status(400).json({ 
+                success: false,
+                message: 'FCM token is required' 
+            });
+        }
+
+        // Check if this token is already assigned to another user
+        const existingUser = await User.findOne({
+            where: { 
+                fcmToken: fcmToken,
+                user_id: { [Op.ne]: userId } // Not equal to current user
+            }
+        });
+
+        if (existingUser) {
+            console.log(`⚠️ FCM token already exists for user ${existingUser.user_id}, removing it`);
+            // Clear the token from the other user
+            await User.update(
+                { fcmToken: null },
+                { where: { user_id: existingUser.user_id } }
+            );
+            console.log(`✅ Removed duplicate FCM token from user ${existingUser.user_id}`);
+        }
+
+        // Update the current user's FCM token
+        const [updated] = await User.update(
+            { fcmToken: fcmToken },
+            { where: { user_id: userId } }
+        );
+
+        if (updated) {
+            console.log(`✅ FCM token updated for user ${userId}`);
+            res.status(200).json({ 
+                success: true,
+                message: 'FCM token updated successfully' 
+            });
+        } else {
+            console.log(`⚠️ User ${userId} not found`);
+            res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error updating FCM token:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error updating FCM token', 
+            error: error.message 
+        });
+    }
+};
+
+// Remove FCM Token (called on logout)
+const removeFCMToken = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+
+        console.log(`🔴 Removing FCM token for user ${userId} (logout)`);
+
+        // Clear the user's FCM token
+        const [updated] = await User.update(
+            { fcmToken: null },
+            { where: { user_id: userId } }
+        );
+
+        if (updated) {
+            console.log(`✅ FCM token removed for user ${userId}`);
+            res.status(200).json({ 
+                success: true,
+                message: 'FCM token removed successfully' 
+            });
+        } else {
+            console.log(`⚠️ User ${userId} not found`);
+            res.status(404).json({ 
+                success: false,
+                message: 'User not found' 
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error removing FCM token:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error removing FCM token', 
+            error: error.message 
+        });
+    }
+};
+
+// Check FCM Tokens (for testing purposes)
+const checkFCMTokens = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: ['user_id', 'name', 'email', 'college_id', 'fcmToken'],
+            where: {
+                fcmToken: { [Op.ne]: null } // Only return users with FCM tokens
+            }
+        });
+
+        res.status(200).json(users);
+    } catch (error) {
+        console.error('❌ Error fetching FCM tokens:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error fetching FCM tokens', 
+            error: error.message 
+        });
+    }
+};
+
+module.exports = { registerUser, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword, updateFCMToken, removeFCMToken, checkFCMTokens};

@@ -6,21 +6,30 @@
   "scripts": {
     "test": "jest --detectOpenHandles",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "setup-db": "./setup-database.sh",
+    "setup-db-js": "node scripts/setupDatabase.js",
+    "db:init": "node scripts/initDatabase.js",
+    "db:reset": "node scripts/resetDatabase.js"
   },
   "author": "bhumika k.c.",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.8.2",
     "bcrypt": "^5.1.1",
+    "cloudinary": "^1.41.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.2.1",
+    "firebase-admin": "^13.6.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "mysql": "^2.18.1",
     "mysql2": "^3.11.3",
-    "nodemailer": "^6.9.16",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.10",
     "sequelize": "^6.37.4",
     "socket.io": "^4.8.1"
   },
@@ -28,6 +37,7 @@
     "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
     "sequelize-cli": "^6.6.3",
+    "socket.io-client": "^4.8.1",
     "supertest": "^7.1.1"
   }
 }

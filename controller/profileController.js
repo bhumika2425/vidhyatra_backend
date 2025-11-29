@@ -1,145 +1,120 @@
-const profileService = require('../services/profileService');
-const Profile = require('../models/profileModel'); // Assuming you have a Profile model
+// controller/profileController.js
+const ProfileService = require('../services/profileService');
 
-// Admin: Create a new profile
-const createProfile = async (req, res) => {
-  const { full_name, date_of_birth, location, department, year, semester, section, bio, interest } = req.body;
-
-  try {
-    console.log('Request Body:', req.body); // Debug log
-
-    // Step 1: Verify if the user is authenticated
-    const user = req.user;
-    if (!user || !user.user_id) {
-      return res.status(401).json({ message: 'Unauthorized: No user logged in.' });
+/**
+ * Get user profile (read-only for students - data comes from college database)
+ */
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user.user_id; // From auth middleware
+        
+        const profile = await ProfileService.getUserProfile(userId);
+        
+        res.status(200).json({
+            message: 'Profile retrieved successfully',
+            profile
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(404).json({ error: error.message });
     }
-
-    // Validate full name
-    if (!full_name) {
-      return res.status(400).json({ message: 'Full name cannot be empty.' });
-    }
-
-    // Check if full name contains numbers
-    if (/\d/.test(full_name)) {
-      return res.status(400).json({ 
-        message: 'Full name cannot contain numbers. Please enter alphabets only.' 
-      });
-    }
-    // Step 2: Prepare profile data
-    const profileData = {
-      user_id: user.user_id,
-      full_name,
-      date_of_birth,
-      location,
-      department,
-      year,
-      semester,
-      section,
-      bio: bio || '', // Bio is optional
-      interest: interest || '', // Interest is optional
-    };
-
-    // Attach profile image URL if file exists
-    if (req.file) {
-      profileData.profileImageUrl = req.file.path;
-      console.log("Cloudinary URL for profile image:", req.file.path);
-    }
-
-    // Step 3: Save profile data
-    const newProfile = await profileService.createProfile(profileData);
-
-    console.log('Profile created successfully:', newProfile);
-    res.status(201).json({
-      message: 'Student profile created successfully',
-      data: newProfile,
-    });
-  } catch (error) {
-    console.error('Error creating profile:', error);
-    res.status(500).json({
-      message: 'Error creating profile',
-      error: error.message,
-    });
-  }
 };
 
-// Check if profile exists for the authenticated user
-const checkProfileExists = async (req, res) => {
-  try {
-    const userId = req.user.user_id; // Extract user ID from req.user set by authentication middleware
-    const profile = await Profile.findOne({ where: { user_id: userId } });
-
-    if (profile) {
-      return res.status(200).json({ exists: true, profile });
-    } else {
-      return res.status(200).json({ exists: false });
-    }
-  } catch (error) {
-    console.error('Error checking profile existence:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Fetch profile data for the authenticated user
-const getProfileData = async (req, res) => {
-  try {
-    const userId = req.user.user_id; // Extract user ID from req.user set by authentication middleware
-    const profile = await Profile.findOne({ where: { user_id: userId } });
-
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found' });
-    }
-
-    res.status(200).json({
-      message: 'Profile fetched successfully',
-      profile,
-    });
-  } catch (error) {
-    console.error('Error fetching profile data:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-// Update profile
+/**
+ * Update user profile (limited fields for students)
+ * Students can only update: bio, interest, date_of_birth, location
+ * Academic fields (department, year, semester, section) are read-only from college database
+ */
 const updateProfile = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const { full_name, date_of_birth, location, department, year, semester, section,  bio, interest } = req.body;
-
-    const updatedData = {
-      full_name,
-      date_of_birth,
-      location,
-      department,
-      year,
-      semester,
-      section,
-      bio: bio || '',           // Ensure empty string if not provided
-      interest: interest || '', // Ensure empty string if not provided
-    };
-
-    // Handle profile image update
-    if (req.file) {
-      updatedData.profileImageUrl = req.file.path;
-      console.log('Updated Cloudinary URL for profile image:', updatedData.profileImageUrl);
+    try {
+        const userId = req.user.user_id; // From auth middleware
+        const updateData = req.body;
+        
+        // Filter allowed fields for updates
+        const allowedUpdates = ['bio', 'interest', 'date_of_birth', 'location'];
+        const filteredUpdateData = {};
+        
+        allowedUpdates.forEach(field => {
+            if (updateData[field] !== undefined) {
+                filteredUpdateData[field] = updateData[field];
+            }
+        });
+        
+        // Handle profile image update
+        if (req.file) {
+            filteredUpdateData.profileImageUrl = req.file.path;
+            console.log('Updated Cloudinary URL for profile image:', filteredUpdateData.profileImageUrl);
+        }
+        
+        const updatedProfile = await ProfileService.updateUserProfile(userId, filteredUpdateData);
+        
+        res.status(200).json({
+            message: 'Profile updated successfully',
+            profile: updatedProfile
+        });
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(400).json({ error: error.message });
     }
+};
 
-    const updatedProfile = await profileService.updateProfile(userId, updatedData);
-    if (updatedProfile) {
-      res.status(200).json({
-        message: 'Profile updated successfully',
-        profile: updatedProfile,
-      });
-    } else {
-      res.status(404).json({ message: 'Profile not found' });
+/**
+ * Get all student profiles (admin/teacher only)
+ */
+const getAllStudentProfiles = async (req, res) => {
+    try {
+        console.log('📋 Get all student profiles request:');
+        console.log('   User ID:', req.user?.user_id);
+        console.log('   Is Admin:', req.user?.isAdmin);
+        console.log('   Role:', req.user?.role);
+        
+        // Check if user is admin or teacher (using isAdmin flag or role)
+        if (!req.user.isAdmin && req.user.role !== 'Teacher') {
+            console.log('❌ Access denied - not admin or teacher');
+            return res.status(403).json({ 
+                error: 'Access denied. Only admins and teachers can view all student profiles.' 
+            });
+        }
+        
+        console.log('✅ Access granted - fetching student profiles');
+        const profiles = await ProfileService.getAllStudentProfiles();
+        
+        res.status(200).json({
+            message: 'Student profiles retrieved successfully',
+            count: profiles.length,
+            profiles
+        });
+    } catch (error) {
+        console.error('Get all profiles error:', error);
+        res.status(500).json({ error: error.message });
     }
-  } catch (error) {
-    console.error('Error updating profile:', error.message);
-    res.status(500).json({ message: 'Error updating profile', error: error.message });
-  }
+};
+
+/**
+ * Check if profile exists for the authenticated user
+ * (For backward compatibility with existing frontend)
+ */
+const checkProfileExists = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const profile = await ProfileService.getUserProfile(userId);
+        
+        if (profile) {
+            return res.status(200).json({ exists: true, profile });
+        } else {
+            return res.status(200).json({ exists: false });
+        }
+    } catch (error) {
+        console.error('Error checking profile existence:', error.message);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
 };
 
 module.exports = {
-  createProfile,
-  checkProfileExists,
-  getProfileData,
-  updateProfile,
+    getProfile,
+    updateProfile,
+    getAllStudentProfiles,
+    checkProfileExists,
+    // Backward compatibility aliases
+    getProfileData: getProfile
 };

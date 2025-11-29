@@ -23,11 +23,11 @@ const Payment = sequelizeVidhyatra.define('Payment', {
     allowNull: false, // Amount is required
   },
   dataFromVerificationReq: {
-    type: DataTypes.JSONB, // Store as JSON
+    type: DataTypes.JSON, // Changed from JSONB (PostgreSQL) to JSON (MySQL)
     allowNull: true, // Optional field
   },
   apiQueryFromUser: {
-    type: DataTypes.JSONB, // Store as JSON
+    type: DataTypes.JSON, // Changed from JSONB (PostgreSQL) to JSON (MySQL)
     allowNull: true, // Optional field
   },
   paymentGateway: {

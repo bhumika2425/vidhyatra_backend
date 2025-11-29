@@ -44,27 +44,42 @@ const authenticateUser = async (req, res, next) => {
 };
 
 const authenticateAdmin = async (req, res, next) => {
+    // TEMPORARY: Allow requests without authentication for testing
+    // TODO: Remove this bypass after implementing proper admin login
+    if (process.env.NODE_ENV === 'development' && !req.headers.authorization) {
+        console.log('⚠️ WARNING: Admin authentication bypassed for development');
+        req.user = { user_id: 1, isAdmin: true }; // Mock admin user
+        return next();
+    }
+
     const authHeader = req.headers.authorization;
   
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(403).json({ message: 'No token provided or invalid format' });
+        return res.status(403).json({ message: 'No token provided or invalid format' });
     }
   
     const token = authHeader.split(' ')[1];
   
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const admin = await Admin.findByPk(decoded.admin_id);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Check if it's a user (not separate admin table)
+        const user = await User.findByPk(decoded.user_id);
   
-      if (!admin) {
-        return res.status(404).json({ message: 'Admin not found' });
-      }
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if user has admin privileges
+        if (!user.isAdmin) {
+            return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+        }
   
-      req.admin = admin;
-      next();
+        req.user = user;
+        next();
     } catch (error) {
-      console.error('Token error:', error);
-      return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+        console.error('Token error:', error);
+        return res.status(401).json({ message: 'Unauthorized: Invalid token' });
     }
 };
 
@@ -88,8 +103,8 @@ const authenticateUserOrAdmin = async (req, res, next) => {
           return res.status(404).json({ message: 'User not found.' });
         }
         req.user = user;
-        req.isAdmin = false; // Flag to indicate user, not admin
-        console.log('Authenticated as User:', req.user.user_id);
+        req.isAdmin = user.isAdmin === true;
+        console.log('Authenticated as User:', req.user.user_id, 'isAdmin:', req.isAdmin);
         return next();
       }
   

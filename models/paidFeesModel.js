@@ -6,7 +6,7 @@ const User = require('./user'); // Importing User model
 
 const PaidFees = sequelizeVidhyatra.define('PaidFees', {
   paidFeesId: {
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER, // Changed from STRING to INTEGER for autoIncrement
     primaryKey: true, 
     autoIncrement: true, // Auto incrementing primary key
   },

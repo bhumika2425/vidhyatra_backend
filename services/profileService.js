@@ -1,21 +1,137 @@
+// services/profileService.js
 const Profile = require('../models/profileModel');
+const User = require('../models/user');
 
-const createProfile = async (profileData) => {
-  try {
-    // Ensure bio and interest are included in the profileData
-    const { bio, interest , section } = profileData;
+/**
+ * Get user profile (all data now stored locally in vidhyatra database)
+ * No need to fetch from ICP database as all college data is stored during registration
+ */
+const getUserProfile = async (userId) => {
+    try {
+        const user = await User.findByPk(userId);
 
-    const newProfile = await Profile.create({
-      ...profileData, // Spread the rest of the fields
-      section: section || '',
-      bio: bio || '',  // Default bio to an empty string if not provided
-      interest: interest || '', // Default interest to an empty string if not provided
-    });
+        if (!user) {
+            throw new Error('User not found');
+        }
 
-    return newProfile;
-  } catch (error) {
-    throw new Error('Error creating profile: ' + error.message);
-  }
+        const profile = await Profile.findOne({
+            where: { user_id: userId }
+        });
+
+        if (!profile) {
+            throw new Error('Profile not found');
+        }
+
+        // Return comprehensive profile data (all stored locally)
+        const profileData = {
+            user_id: user.user_id,
+            college_id: user.college_id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            email_verified: user.email_verified,
+            // All profile data (academic + personal)
+            full_name: profile.full_name,
+            department: profile.department,
+            year: profile.year,
+            semester: profile.semester,
+            section: profile.section,
+            phone_number: profile.phone_number,
+            college_email: profile.college_email,
+            profileImageUrl: profile.profileImageUrl,
+            bio: profile.bio,
+            interest: profile.interest,
+            date_of_birth: profile.date_of_birth,
+            location: profile.location,
+            // Teacher-specific fields
+            subject: profile.subject,
+            qualification: profile.qualification,
+            // Timestamps
+            createdAt: user.created_at,
+            updatedAt: profile.updatedAt
+        };
+
+        return profileData;
+    } catch (error) {
+        throw new Error(`Unable to fetch profile: ${error.message}`);
+    }
+};
+
+/**
+ * Update only editable fields for students (bio, interest, date_of_birth, location)
+ * Academic information cannot be changed as it comes from college database
+ */
+const updateUserProfile = async (userId, updateData) => {
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // For students, only allow updating non-academic fields
+        const allowedFields = ['bio', 'interest', 'date_of_birth', 'location'];
+        
+        if (user.role === 'Student') {
+            // Filter out any academic fields that students shouldn't modify
+            const filteredData = {};
+            Object.keys(updateData).forEach(key => {
+                if (allowedFields.includes(key)) {
+                    filteredData[key] = updateData[key];
+                }
+            });
+            updateData = filteredData;
+        }
+
+        const [updatedRowsCount] = await Profile.update(updateData, {
+            where: { user_id: userId }
+        });
+
+        if (updatedRowsCount === 0) {
+            throw new Error('Profile not found or no changes made');
+        }
+
+        // Return updated profile
+        return await getUserProfile(userId);
+    } catch (error) {
+        throw new Error(`Unable to update profile: ${error.message}`);
+    }
+};
+
+/**
+ * Get all students profiles (for admin/teacher use)
+ */
+const getAllStudentProfiles = async () => {
+    try {
+        const students = await User.findAll({
+            where: { role: 'Student' },
+            include: [{
+                model: Profile,
+                required: true
+            }],
+            attributes: { exclude: ['password', 'otp', 'otpExpiry'] }
+        });
+
+        return students.map(student => ({
+            user_id: student.user_id,
+            college_id: student.college_id,
+            name: student.name,
+            email: student.email,
+            department: student.Profile.department,
+            year: student.Profile.year,
+            semester: student.Profile.semester,
+            section: student.Profile.section,
+            phone_number: student.Profile.phone_number,
+            profileImageUrl: student.Profile.profileImageUrl
+        }));
+    } catch (error) {
+        throw new Error(`Unable to fetch student profiles: ${error.message}`);
+    }
+};
+
+module.exports = {
+    getUserProfile,
+    updateUserProfile,
+    getAllStudentProfiles
 };
 
 const updateProfile = async (userId, updatedData) => {
@@ -43,6 +159,10 @@ const updateProfile = async (userId, updatedData) => {
 };
 
 module.exports = {
-  createProfile,
-  updateProfile,
+  getUserProfile,
+  updateUserProfile,
+  getAllStudentProfiles,
+  // Legacy functions for backward compatibility
+  getProfileById: getUserProfile,
+  updateProfile: updateUserProfile
 };
