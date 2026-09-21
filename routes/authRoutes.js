@@ -1,6 +1,6 @@
 // routes/authRoutes.js
 const express = require('express');
-const { registerUser, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword, updateFCMToken, removeFCMToken, checkFCMTokens } = require('../controller/authController');
+const { registerUser, loginUser, forgotPassword, resetPassword, verifyOtp ,getAllUsers, getStudents, getTeachers, changePassword, updateFCMToken, removeFCMToken, checkFCMTokens, refreshAccessToken } = require('../controller/authController');
 const { authenticateUser ,authenticateAdmin } = require('../middleware/auth');
 
 
@@ -13,6 +13,9 @@ router.post('/forgot-password', forgotPassword); // Forgot password route
 
 router.post('/verify-otp', verifyOtp);            // Step 2: Verify OTP
 router.post('/reset-password', resetPassword);   // Reset password route
+
+// Refresh token endpoint
+router.post('/refresh-token', refreshAccessToken);
 
 // Add a route to get all users
 router.get('/users', authenticateUser, getAllUsers);

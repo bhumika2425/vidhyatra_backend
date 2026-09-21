@@ -15,7 +15,7 @@ const validateSendNotification = [
     body('type').isIn([
         'BLOG_POST', 'FRIEND_REQUEST', 'EVENT_REMINDER', 'FEE_REMINDER', 
         'DEADLINE_ALERT', 'APPOINTMENT_CONFIRMATION', 'ACADEMIC_UPDATE', 
-        'SYSTEM_ANNOUNCEMENT', 'LOST_AND_FOUND'
+        'SYSTEM_ANNOUNCEMENT', 'LOST_AND_FOUND', 'ANNOUNCEMENT', 'EXAM_SEAT_ALERT'
     ]).withMessage('Invalid notification type'),
     body('priority').optional().isIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).withMessage('Invalid priority level')
 ];

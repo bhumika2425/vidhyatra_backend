@@ -34,7 +34,8 @@ const Notification = sequelizeVidhyatra.define('Notification', {
             'ACADEMIC_UPDATE',
             'SYSTEM_ANNOUNCEMENT',
             'LOST_AND_FOUND',
-            'ANNOUNCEMENT'
+            'ANNOUNCEMENT',
+            'EXAM_SEAT_ALERT'
         ),
         allowNull: false,
     },

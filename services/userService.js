@@ -267,9 +267,10 @@ const registerUser = async (collegeId, email, password, confirmPassword) => {
     }
 };
 
-const loginUser = async (identifier, password) => {
+const loginUser = async ({ identifier, password, rememberMe = false }) => {
     try {
         console.log('🔍 userService.loginUser called with identifier:', identifier);
+        console.log('   Remember Me:', rememberMe);
         
         // Find user by email or college_id
         const user = await User.findOne({
@@ -311,15 +312,31 @@ const loginUser = async (identifier, password) => {
             isAdmin: user.isAdmin || false  // ✅ Include isAdmin in token
         };
         
-        console.log('   Creating JWT token with payload:', tokenPayload);
+        console.log('   Creating JWT tokens with payload:', tokenPayload);
         
+        // Determine token expiration based on rememberMe flag (already destructured from params)
+        const accessTokenExpiry = rememberMe ? '30d' : '1d';
+        const refreshTokenExpiry = '90d'; // Refresh token valid for 90 days
+        
+        // Generate access token
         const token = jwt.sign(
             tokenPayload,
             process.env.JWT_SECRET,
-            { expiresIn: '1d' }
+            { expiresIn: accessTokenExpiry }
         );
-
-        console.log('   ✅ Token created successfully');
+        
+        // Generate refresh token (only if rememberMe is true)
+        let refreshToken = null;
+        if (rememberMe) {
+            refreshToken = jwt.sign(
+                { user_id: user.user_id, type: 'refresh' },
+                process.env.JWT_SECRET,
+                { expiresIn: refreshTokenExpiry }
+            );
+            console.log('   ✅ Access token (30d) and refresh token (90d) created');
+        } else {
+            console.log('   ✅ Access token (1d) created - no refresh token');
+        }
 
         // Return minimal user data for security and performance
         const loginResponse = {
@@ -333,6 +350,11 @@ const loginUser = async (identifier, password) => {
             },
             token
         };
+        
+        // Add refresh token if generated
+        if (refreshToken) {
+            loginResponse.refreshToken = refreshToken;
+        }
 
         console.log('   📦 Login response prepared');
         return loginResponse;

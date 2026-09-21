@@ -39,18 +39,20 @@ const registerUser = async (req, res) => {
 
 // Create a const function for user login logic
 const loginUser = async (req, res) => {
-    const { identifier, password } = req.body;
+    const { identifier, password, rememberMe } = req.body;
 
     console.log('🔐 Login attempt:');
     console.log('   Identifier:', identifier);
     console.log('   Password length:', password ? password.length : 0);
+    console.log('   Remember Me:', rememberMe);
     console.log('   Request body:', JSON.stringify(req.body, null, 2));
 
     try {
-        const result = await UserService.loginUser(identifier, password);
+        const result = await UserService.loginUser({ identifier, password, rememberMe });
         console.log('✅ Login successful for:', identifier);
         console.log('   User ID:', result.user?.user_id);
         console.log('   Is Admin:', result.user?.isAdmin);
+        console.log('   Has Refresh Token:', !!result.refreshToken);
         res.status(200).json(result); // Send the token and user data in the response
     } catch (error) {
         console.error('❌ Login error:', error.message);
@@ -365,4 +367,66 @@ const checkFCMTokens = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword, updateFCMToken, removeFCMToken, checkFCMTokens};
+// Refresh access token using refresh token
+const refreshAccessToken = async (req, res) => {
+    const { refreshToken } = req.body;
+
+    console.log('🔄 Refresh token request received');
+
+    if (!refreshToken) {
+        return res.status(400).json({ message: 'Refresh token is required' });
+    }
+
+    try {
+        // Verify the refresh token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        
+        console.log('   Decoded refresh token:', decoded);
+
+        // Check if it's a refresh token (not a regular access token)
+        if (decoded.type !== 'refresh') {
+            console.log('   ❌ Invalid token type');
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        // Find the user
+        const user = await User.findOne({ where: { user_id: decoded.user_id } });
+
+        if (!user) {
+            console.log('   ❌ User not found');
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate new access token (30 days)
+        const newAccessToken = jwt.sign(
+            { 
+                user_id: user.user_id, 
+                role: user.role,
+                isAdmin: user.isAdmin || false
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+
+        console.log('   ✅ New access token generated for user:', user.user_id);
+
+        res.status(200).json({ 
+            accessToken: newAccessToken,
+            message: 'Access token refreshed successfully'
+        });
+    } catch (error) {
+        console.error('❌ Refresh token error:', error.message);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Refresh token expired. Please login again.' });
+        }
+        
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Invalid refresh token' });
+        }
+
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+module.exports = { registerUser, loginUser, forgotPassword, verifyOtp, resetPassword , getAllUsers, getStudents, getTeachers, changePassword, updateFCMToken, removeFCMToken, checkFCMTokens, refreshAccessToken};

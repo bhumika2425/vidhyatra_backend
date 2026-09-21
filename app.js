@@ -17,11 +17,16 @@ const academicRoutes = require('./routes/academicRoutes');
 const lostAndFoundRoutes = require('./routes/lostAndFoundRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const classroomRoutes = require('./routes/classroomRoutes');
+const examRoutes = require('./routes/examRoutes');
+const allocationRoutes = require('./routes/allocationRoutes');
 
+require('dotenv').config();
 const http = require('http');
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+
 
 // Initialize notification cleanup cron job
 require('./jobs/notificationCleanup');
@@ -63,6 +68,11 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/lost-and-found', lostAndFoundRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/classrooms', classroomRoutes);
+app.use('/api/exams', examRoutes);
+app.use('/api/exams', allocationRoutes);
+app.use('/api/allocations', allocationRoutes);
 
 // Socket.IO Authentication Middleware
 io.use((socket, next) => {
